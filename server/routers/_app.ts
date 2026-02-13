@@ -1,7 +1,8 @@
 import { createTRPCRouter } from '../trpc';
+import { gameRouter } from './game';
 
 export const appRouter = createTRPCRouter({
-  // ルーターをここに追加
+  game: gameRouter,
 });
 
 export type AppRouter = typeof appRouter;
