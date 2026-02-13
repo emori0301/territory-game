@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  status    String   @default("playing") // playing, finished
+  tick      Int      @default(0)
+  winnerId  String?
+  
+  factions Faction[]
+  units    Unit[]
+  cells    Cell[]
+  ticks    TickHistory[]
+}
+
+model Faction {
+  id      String @id @default(cuid())
+  gameId  String
+  game    Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  name    String
+  
+  units Unit[]
+  cells Cell[]
+}
+
+model Unit {
+  id        String   @id @default(cuid())
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  factionId String
+  faction   Faction  @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  x         Int
+  y         Int
+  sex       String   // "male" | "female"
+  value     Int
+  isHero    Boolean  @default(false)
+  age       Int      @default(0)
+  
+  cell Cell?
+}
+
+model Cell {
+  id           String   @id @default(cuid())
+  gameId       String
+  game         Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  x            Int
+  y            Int
+  ownerFactionId String?
+  ownerFaction   Faction? @relation(fields: [ownerFactionId], references: [id], onDelete: SetNull)
+  unitId       String?  @unique
+  unit         Unit?    @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  
+  @@unique([gameId, x, y])
+  @@index([gameId])
+}
+
+model TickHistory {
+  id     String   @id @default(cuid())
+  gameId String
+  game   Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  tick   Int
+  data   Json     // ゲーム状態のスナップショット
+  
+  @@index([gameId, tick])
+}
+
