@@ -14,13 +14,11 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   // 背景パターンを固定（useMemoで一度だけ生成）
   const backgroundPattern = useMemo(() => {
     const pattern: Array<Array<{ color: string; dots: Array<{ x: number; y: number }> }>> = [];
-    const grassColors = ["#7cb342", "#8bc34a", "#9ccc65", "#aed581"];
+    const grassColor = "#7cb342"; // 全て同じ色
     
     for (let y = 0; y < 30; y++) {
       pattern[y] = [];
       for (let x = 0; x < 30; x++) {
-        // 固定パターン（x+yの値で決定）
-        const colorIndex = (x + y * 3) % grassColors.length;
         const dots: Array<{ x: number; y: number }> = [];
         // 固定のドット位置
         for (let i = 0; i < 3; i++) {
@@ -30,7 +28,7 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
           });
         }
         pattern[y]!.push({
-          color: grassColors[colorIndex]!,
+          color: grassColor,
           dots,
         });
       }

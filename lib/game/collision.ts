@@ -110,29 +110,46 @@ function handleFemaleFemaleCollision(
 
 /**
  * 敵勢力衝突（戦闘）
+ * 差分の数字を減らす（いきなり死なない）
  */
 function handleEnemyCollision(
   unitA: Unit,
   unitB: Unit,
   gameState: GameState,
-): Unit[] {
-  const winRate = unitA.value / (unitA.value + unitB.value);
-  const winner = Math.random() < winRate ? unitA : unitB;
+): { units: Unit[]; cells: Cell[][] } {
+  const valueDiff = Math.abs(unitA.value - unitB.value);
+  
+  // 値が大きい方が勝者
+  const winner = unitA.value > unitB.value ? unitA : unitB;
   const loser = winner.id === unitA.id ? unitB : unitA;
 
-  // 英雄の場合、value完全吸収
-  const valueGain = winner.isHero ? loser.value : 2;
+  // 敗者のvalueを差分だけ減らす
+  const newLoserValue = loser.value - valueDiff;
 
-  const newUnits = gameState.units
-    .filter((u) => u.id !== loser.id)
-    .map((u) => {
-      if (u.id === winner.id) {
-        return { ...u, value: u.value + valueGain, x: winner.x, y: winner.y };
+  const newCells = gameState.cells.map((row) => row.map((cell) => ({ ...cell })));
+
+  const newUnits = gameState.units.map((u) => {
+    if (u.id === winner.id) {
+      // 勝者はvalueを増やす（敗者のvalueの一部を獲得）
+      const valueGain = Math.min(loser.value, 3); // 最大3まで獲得
+      return { ...u, value: u.value + valueGain, x: winner.x, y: winner.y };
+    }
+    if (u.id === loser.id) {
+      // 敗者は差分だけvalueを減らす
+      if (newLoserValue <= 0) {
+        // valueが0以下になった場合は削除
+        // cellからも削除
+        if (newCells[loser.y]?.[loser.x]) {
+          newCells[loser.y]![loser.x]!.unitId = null;
+        }
+        return null;
       }
-      return u;
-    });
+      return { ...u, value: newLoserValue, x: loser.x, y: loser.y };
+    }
+    return u;
+  }).filter((u): u is Unit => u !== null);
 
-  return newUnits;
+  return { units: newUnits, cells: newCells };
 }
 
 /**

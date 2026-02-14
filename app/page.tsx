@@ -100,18 +100,6 @@ export default function Home() {
           陣地トリゲーム
         </h1>
 
-        {/* デバッグ情報 */}
-        {process.env.NODE_ENV === "development" && (
-          <div className="mb-4 text-xs text-gray-500">
-            <p>gameId: {gameId || "null"}</p>
-            <p>isRunning: {isRunning ? "true" : "false"}</p>
-            <p>createGame.isPending: {createGame.isPending ? "true" : "false"}</p>
-            <p>createGame.error: {createGame.error?.message || "none"}</p>
-            <p>getState.isLoading: {getState.isLoading ? "true" : "false"}</p>
-            <p>getState.error: {getState.error?.message || "none"}</p>
-            <p>gameState: {gameState ? "exists" : "null"}</p>
-          </div>
-        )}
 
         <div className="mb-6 flex gap-4 justify-center flex-wrap">
           {!gameId ? (

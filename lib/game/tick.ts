@@ -253,8 +253,8 @@ export function executeTick(gameState: GameState): GameState {
       );
       newCells[pos.y]![pos.x] = paintedCells[pos.y]![pos.x]!;
 
-      // 移動時のvalue消費を確率的に減らす（50%の確率で消費しない）
-      if (valueConsumed && Math.random() < MOVE_VALUE_CONSUMPTION_PROBABILITY) {
+      // 塗りをした場合のみvalueを1消費
+      if (valueConsumed) {
         unit.value -= 1;
       }
     }
@@ -263,8 +263,7 @@ export function executeTick(gameState: GameState): GameState {
   // 6. ageを増加
   units = units.map((u) => ({ ...u, age: u.age + 1 }));
 
-  // 7. 自然減衰
-  units = applyNaturalDecay(units);
+  // 7. 自然減衰は削除（塗りをした時のみvalueを消費）
 
   // 8. 英雄誕生判定
   units = checkHeroBirth({ ...gameState, units, cells: newCells });
