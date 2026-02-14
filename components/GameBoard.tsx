@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useMemo, useState } from "react";
-import type { GameState, UnitTrait } from "@/lib/game/types";
+import type { GameState, UnitTrait, TerrainType } from "@/lib/game/types";
 
 interface GameBoardProps {
   gameState: GameState | null;
@@ -17,6 +17,108 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+  
+  // 地形画像を読み込み
+  const terrainImages = useRef<Record<TerrainType, HTMLImageElement | null>>({
+    plain: null,
+    water: null,
+    rock: null,
+    tree: null,
+    swamp: null,
+    mountain: null,
+  });
+  
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    // フリー素材の画像URL（実際の画像に置き換える必要があります）
+    const imageUrls: Record<TerrainType, string> = {
+      plain: "/images/terrain/grass.png",
+      water: "/images/terrain/water.png",
+      rock: "/images/terrain/rock.png",
+      tree: "/images/terrain/tree.png",
+      swamp: "/images/terrain/swamp.png",
+      mountain: "/images/terrain/mountain.png",
+    };
+    
+    // 画像を読み込み
+    Object.keys(imageUrls).forEach((terrain) => {
+      const img = new Image();
+      img.onerror = () => {
+        // 画像が存在しない場合はnullのまま（フォールバックを使用）
+        terrainImages.current[terrain as TerrainType] = null;
+      };
+      img.src = imageUrls[terrain as TerrainType];
+      terrainImages.current[terrain as TerrainType] = img;
+    });
+  }, []);
+  
+  // 地形画像を取得する関数
+  const getTerrainImage = (terrain: TerrainType): HTMLImageElement | null => {
+    return terrainImages.current[terrain] || null;
+  };
+  
+  // フォールバック描画（画像がない場合）
+  const drawTerrainFallback = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    size: number,
+    terrain: TerrainType,
+  ) => {
+    switch (terrain) {
+      case "water":
+        ctx.fillStyle = "rgba(33, 150, 243, 0.7)"; // 青（水、半透明）
+        ctx.fillRect(x, y, size, size);
+        ctx.fillStyle = "#1976D2";
+        ctx.font = `${Math.floor(size * 0.4)}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("~", x + size / 2, y + size / 2);
+        break;
+      case "rock":
+        // 岩は緑背景の上に半透明で描画（違和感なく）
+        ctx.fillStyle = "rgba(117, 117, 117, 0.5)"; // グレー（半透明）
+        ctx.fillRect(x, y, size, size);
+        ctx.fillStyle = "#424242";
+        ctx.font = `${Math.floor(size * 0.3)}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("■", x + size / 2, y + size / 2);
+        break;
+      case "tree":
+        ctx.fillStyle = "rgba(76, 175, 80, 0.8)"; // 緑（木、半透明）
+        ctx.fillRect(x, y, size, size);
+        ctx.fillStyle = "#2E7D32";
+        ctx.font = `${Math.floor(size * 0.4)}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("♠", x + size / 2, y + size / 2);
+        break;
+      case "swamp":
+        ctx.fillStyle = "rgba(121, 85, 72, 0.7)"; // 茶色（沼地、半透明）
+        ctx.fillRect(x, y, size, size);
+        ctx.fillStyle = "#5D4037";
+        ctx.font = `${Math.floor(size * 0.3)}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("≈", x + size / 2, y + size / 2);
+        break;
+      case "mountain":
+        ctx.fillStyle = "rgba(158, 158, 158, 0.7)"; // ライトグレー（山、半透明）
+        ctx.fillRect(x, y, size, size);
+        ctx.fillStyle = "#616161";
+        ctx.font = `${Math.floor(size * 0.3)}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("▲", x + size / 2, y + size / 2);
+        break;
+      case "plain":
+      default:
+        // 平地は何も描画しない（背景のみ）
+        break;
+    }
+  };
   
   // 特性の日本語名と説明を取得
   const getTraitInfo = (trait: UnitTrait): { name: string; description: string } => {
