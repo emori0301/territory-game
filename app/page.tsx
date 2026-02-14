@@ -183,7 +183,7 @@ export default function Home() {
                 体
               </div>
               <div className="text-green-400">
-                Tick: <span className="font-bold">{gameState.tick}</span> / 500
+                経過日数: <span className="font-bold">{gameState.tick}</span>日
               </div>
               {gameState.status === "finished" && (
                 <div className="text-green-500 font-bold text-lg">

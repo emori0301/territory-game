@@ -11,11 +11,58 @@ interface GameBoardProps {
 export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [hoveredUnit, setHoveredUnit] = useState<{ unit: any; x: number; y: number } | null>(null);
   
   // クライアント側でのみマウントされるようにする
   useEffect(() => {
     setIsMounted(true);
   }, []);
+  
+  // 特性の日本語名を取得
+  const getTraitName = (trait: string): string => {
+    switch (trait) {
+      case "painter":
+        return "塗り職人";
+      case "aggressive":
+        return "攻撃的";
+      case "gatherer":
+        return "集結型";
+      case "normal":
+        return "通常";
+      default:
+        return trait;
+    }
+  };
+  
+  // マウス移動イベントハンドラー
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!gameState || !canvasRef.current) {
+      setHoveredUnit(null);
+      return;
+    }
+    
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / cellSize);
+    const y = Math.floor((e.clientY - rect.top) / cellSize);
+    
+    // マウス位置のコマを検索
+    const unit = gameState.units.find((u) => u.x === x && u.y === y);
+    
+    if (unit) {
+      setHoveredUnit({
+        unit,
+        x: e.clientX,
+        y: e.clientY,
+      });
+    } else {
+      setHoveredUnit(null);
+    }
+  };
+  
+  const handleMouseLeave = () => {
+    setHoveredUnit(null);
+  };
   
   // 背景パターンを固定（useMemoで一度だけ生成、Hydrationエラーを防ぐ）
   const backgroundPattern = useMemo(() => {
@@ -157,17 +204,38 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   }
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center relative">
       <canvas
         ref={canvasRef}
-        className="border-4 border-green-500 shadow-2xl"
+        className="border-4 border-green-500 shadow-2xl cursor-pointer"
         style={{ 
           imageRendering: "pixelated",
           imageRendering: "-moz-crisp-edges",
           imageRendering: "crisp-edges",
           boxShadow: "0 0 20px rgba(0, 255, 0, 0.5)"
         }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
       />
+      {hoveredUnit && (
+        <div
+          className="absolute bg-black border-2 border-green-500 text-green-400 p-2 pointer-events-none z-10"
+          style={{
+            left: `${hoveredUnit.x + 10}px`,
+            top: `${hoveredUnit.y - 10}px`,
+            transform: "translateY(-100%)",
+            fontFamily: "Courier New, monospace",
+            fontSize: "12px",
+            boxShadow: "0 0 10px rgba(0, 255, 0, 0.5)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <div className="font-bold text-green-500">特性: {getTraitName(hoveredUnit.unit.trait)}</div>
+          <div>Value: {hoveredUnit.unit.value}</div>
+          <div>Age: {hoveredUnit.unit.age}</div>
+          {hoveredUnit.unit.isHero && <div className="text-yellow-400">★ 英雄</div>}
+        </div>
+      )}
     </div>
   );
 }
