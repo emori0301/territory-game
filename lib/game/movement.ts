@@ -217,21 +217,34 @@ function getStrategicDirection(
     }
 
     // 塗られていないマスを優先（painter、aggressive、scoutのフォールバック）
+    // 停滞を防ぐため、移動可能な方向を全てチェック
     const unpaintedDirections: Array<"up" | "down" | "left" | "right"> = [];
     const paintedDirections: Array<"up" | "down" | "left" | "right"> = [];
+    const emptyDirections: Array<"up" | "down" | "left" | "right"> = [];
 
     for (const dir of directions) {
       const nextPos = getNextPosition(unit.x, unit.y, dir, MOVE_DISTANCE);
       if (!isValidPosition(nextPos.x, nextPos.y)) continue;
 
       const cell = gameState.cells[nextPos.y]?.[nextPos.x];
-      if (!cell || cell.ownerFactionId !== unit.factionId) {
+      if (!cell) continue;
+
+      // 移動先にコマがいないかチェック
+      const hasUnit = gameState.units.some(
+        (u) => u.id !== unit.id && u.x === nextPos.x && u.y === nextPos.y && !u.inCombat
+      );
+
+      if (hasUnit) continue; // 他のコマがいる場合はスキップ
+
+      if (cell.ownerFactionId !== unit.factionId) {
         unpaintedDirections.push(dir);
       } else {
         paintedDirections.push(dir);
       }
+      emptyDirections.push(dir);
     }
 
+    // 優先順位: 塗られていないマス > 塗られているマス > ランダム
     if (unpaintedDirections.length > 0) {
       return unpaintedDirections[
         Math.floor(Math.random() * unpaintedDirections.length)
@@ -244,7 +257,14 @@ function getStrategicDirection(
       ]!;
     }
 
-    // フォールバック: ランダム
+    // 空きマスがあればそこへ移動
+    if (emptyDirections.length > 0) {
+      return emptyDirections[
+        Math.floor(Math.random() * emptyDirections.length)
+      ]!;
+    }
+
+    // 全て埋まっている場合はランダム（衝突は後で処理される）
     return getRandomDirection();
   } catch (error) {
     console.error("Error in getStrategicDirection:", error);
@@ -273,6 +293,7 @@ export function generateMoveIntents(gameState: GameState): MoveIntent[] {
 
 /**
  * 移動意図を解決（移動先を計算）
+ * 停滞を防ぐため、移動先が埋まっている場合は別の方向を試す
  */
 export function resolveMoveIntents(
   gameState: GameState,
@@ -284,13 +305,50 @@ export function resolveMoveIntents(
   }
 
   const moveResults = new Map<string, { x: number; y: number }>();
+  const occupiedPositions = new Set<string>();
 
+  // まず全ての移動意図を処理
   for (const intent of intents) {
     const unit = unitMap.get(intent.unitId);
     if (!unit) continue;
 
     const nextPos = getNextPosition(unit.x, unit.y, intent.direction, MOVE_DISTANCE);
-    moveResults.set(intent.unitId, nextPos);
+    const posKey = `${nextPos.x},${nextPos.y}`;
+    
+    // 移動先に他のコマがいるかチェック
+    const hasOtherUnit = gameState.units.some(
+      (u) => u.id !== unit.id && u.x === nextPos.x && u.y === nextPos.y && !u.inCombat
+    );
+
+    if (!hasOtherUnit && !occupiedPositions.has(posKey)) {
+      moveResults.set(intent.unitId, nextPos);
+      occupiedPositions.add(posKey);
+    } else {
+      // 移動先が埋まっている場合は、別の方向を試す
+      const directions: Array<"up" | "down" | "left" | "right"> = ["up", "down", "left", "right"];
+      let moved = false;
+      
+      for (const dir of directions) {
+        const altPos = getNextPosition(unit.x, unit.y, dir, MOVE_DISTANCE);
+        const altPosKey = `${altPos.x},${altPos.y}`;
+        
+        const hasOtherUnitAlt = gameState.units.some(
+          (u) => u.id !== unit.id && u.x === altPos.x && u.y === altPos.y && !u.inCombat
+        );
+        
+        if (!hasOtherUnitAlt && !occupiedPositions.has(altPosKey)) {
+          moveResults.set(intent.unitId, altPos);
+          occupiedPositions.add(altPosKey);
+          moved = true;
+          break;
+        }
+      }
+      
+      // 全ての方向が埋まっている場合は元の位置に留まる（衝突処理に任せる）
+      if (!moved) {
+        moveResults.set(intent.unitId, { x: unit.x, y: unit.y });
+      }
+    }
   }
 
   return moveResults;
