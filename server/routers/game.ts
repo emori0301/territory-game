@@ -117,9 +117,13 @@ export const gameRouter = createTRPCRouter({
       try {
         // 既存のゲームを削除して新しいゲームを作成
         const newGameState = createNewGame();
-        // 同じgameIdで新しいゲームを作成
-        gameStore.set(input.gameId, newGameState);
-        return serializeGameState(newGameState);
+        // 既存のgameIdを保持して新しいゲームを作成
+        const resetGameState = {
+          ...newGameState,
+          id: input.gameId, // 既存のgameIdを保持
+        };
+        gameStore.set(input.gameId, resetGameState);
+        return serializeGameState(resetGameState);
       } catch (error) {
         console.error("Error resetting game:", error);
         throw new Error(`Failed to reset game: ${error instanceof Error ? error.message : String(error)}`);

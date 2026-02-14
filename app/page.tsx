@@ -85,6 +85,7 @@ export default function Home() {
   const resetGame = trpc.game.reset.useMutation({
     onSuccess: (data) => {
       console.log("Game reset:", data);
+      setGameId(data.id); // リセット後のgameIdを設定
       setIsRunning(false);
     },
     onError: (error) => {
@@ -148,8 +149,20 @@ export default function Home() {
   };
 
   const handleStep = async () => {
-    if (!gameId) return;
-    await executeTick.mutateAsync({ gameId });
+    if (!gameId) {
+      console.error("Game ID is not set");
+      return;
+    }
+    try {
+      await executeTick.mutateAsync({ gameId });
+    } catch (error) {
+      console.error("Failed to execute step:", error);
+      // ゲームが見つからない場合は、ゲームを再作成
+      if (error instanceof Error && error.message.includes("Game not found")) {
+        console.log("Game not found, creating new game...");
+        await handleCreateGame();
+      }
+    }
   };
 
   const handleReset = async () => {
@@ -177,7 +190,20 @@ export default function Home() {
     if (!isRunning || !gameId || gameState?.status === "finished") return;
 
     const interval = setInterval(async () => {
-      await executeTick.mutateAsync({ gameId });
+      if (!gameId) {
+        console.error("Game ID is not set in interval");
+        return;
+      }
+      try {
+        await executeTick.mutateAsync({ gameId });
+      } catch (error) {
+        console.error("Failed to execute tick in interval:", error);
+        // ゲームが見つからない場合は停止
+        if (error instanceof Error && error.message.includes("Game not found")) {
+          console.log("Game not found, stopping auto-tick");
+          setIsRunning(false);
+        }
+      }
     }, 500);
 
     return () => clearInterval(interval);
