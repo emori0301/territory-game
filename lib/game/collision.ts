@@ -128,23 +128,36 @@ function handleEnemyCollision(
 
   const newCells = gameState.cells.map((row) => row.map((cell) => ({ ...cell })));
 
+  // 衝突位置のcellをクリア
+  if (newCells[winner.y]?.[winner.x]) {
+    newCells[winner.y]![winner.x]!.unitId = null;
+  }
+
   const newUnits = gameState.units.map((u) => {
     if (u.id === winner.id) {
       // 勝者はvalueを増やす（敗者のvalueの一部を獲得）
       const valueGain = Math.min(loser.value, 3); // 最大3まで獲得
-      return { ...u, value: u.value + valueGain, x: winner.x, y: winner.y };
+      const updatedWinner = { ...u, value: u.value + valueGain, x: winner.x, y: winner.y };
+      // 勝者の位置をcellsに反映
+      if (newCells[updatedWinner.y]?.[updatedWinner.x]) {
+        newCells[updatedWinner.y]![updatedWinner.x]!.unitId = updatedWinner.id;
+      }
+      return updatedWinner;
     }
     if (u.id === loser.id) {
       // 敗者は差分だけvalueを減らす
       if (newLoserValue <= 0) {
         // valueが0以下になった場合は削除
-        // cellからも削除
-        if (newCells[loser.y]?.[loser.x]) {
-          newCells[loser.y]![loser.x]!.unitId = null;
-        }
+        // cellからも削除（既にクリア済み）
         return null;
       }
-      return { ...u, value: newLoserValue, x: loser.x, y: loser.y };
+      // 敗者は同じ位置に残る（valueが減るだけ）
+      const updatedLoser = { ...u, value: newLoserValue, x: loser.x, y: loser.y };
+      // 敗者の位置をcellsに反映
+      if (newCells[updatedLoser.y]?.[updatedLoser.x]) {
+        newCells[updatedLoser.y]![updatedLoser.x]!.unitId = updatedLoser.id;
+      }
+      return updatedLoser;
     }
     return u;
   }).filter((u): u is Unit => u !== null);
