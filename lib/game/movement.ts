@@ -315,6 +315,39 @@ export function resolveMoveIntents(
     const nextPos = getNextPosition(unit.x, unit.y, intent.direction, MOVE_DISTANCE);
     const posKey = `${nextPos.x},${nextPos.y}`;
     
+    const cell = gameState.cells[nextPos.y]?.[nextPos.x];
+    
+    // 地形を通れるかチェック
+    if (!cell || !canPassTerrain(cell.terrain, unit.isHero)) {
+      // 地形を通れない場合は別の方向を試す
+      const directions: Array<"up" | "down" | "left" | "right"> = ["up", "down", "left", "right"];
+      let moved = false;
+      
+      for (const dir of directions) {
+        const altPos = getNextPosition(unit.x, unit.y, dir, MOVE_DISTANCE);
+        const altPosKey = `${altPos.x},${altPos.y}`;
+        const altCell = gameState.cells[altPos.y]?.[altPos.x];
+        
+        if (!altCell || !canPassTerrain(altCell.terrain, unit.isHero)) continue;
+        
+        const hasOtherUnitAlt = gameState.units.some(
+          (u) => u.id !== unit.id && u.x === altPos.x && u.y === altPos.y && !u.inCombat
+        );
+        
+        if (!hasOtherUnitAlt && !occupiedPositions.has(altPosKey)) {
+          moveResults.set(intent.unitId, altPos);
+          occupiedPositions.add(altPosKey);
+          moved = true;
+          break;
+        }
+      }
+      
+      if (!moved) {
+        moveResults.set(intent.unitId, { x: unit.x, y: unit.y });
+      }
+      continue;
+    }
+    
     // 移動先に他のコマがいるかチェック
     const hasOtherUnit = gameState.units.some(
       (u) => u.id !== unit.id && u.x === nextPos.x && u.y === nextPos.y && !u.inCombat
@@ -331,6 +364,9 @@ export function resolveMoveIntents(
       for (const dir of directions) {
         const altPos = getNextPosition(unit.x, unit.y, dir, MOVE_DISTANCE);
         const altPosKey = `${altPos.x},${altPos.y}`;
+        const altCell = gameState.cells[altPos.y]?.[altPos.x];
+        
+        if (!altCell || !canPassTerrain(altCell.terrain, unit.isHero)) continue;
         
         const hasOtherUnitAlt = gameState.units.some(
           (u) => u.id !== unit.id && u.x === altPos.x && u.y === altPos.y && !u.inCombat
