@@ -254,7 +254,10 @@ export default function Home() {
               min="10"
               max="30"
               value={cellSize}
-              onChange={(e) => setCellSize(Number(e.target.value))}
+              onChange={(e) => {
+                const newValue = Number(e.target.value);
+                setCellSize(newValue);
+              }}
               className="w-full"
             />
           </div>
@@ -267,7 +270,10 @@ export default function Home() {
               min="2"
               max="4"
               value={factionCount}
-              onChange={(e) => setFactionCount(Number(e.target.value))}
+              onChange={(e) => {
+                const newValue = Number(e.target.value);
+                setFactionCount(newValue);
+              }}
               className="w-full"
             />
           </div>
@@ -280,7 +286,10 @@ export default function Home() {
               min="0"
               max="100"
               value={musicVolume}
-              onChange={(e) => setMusicVolume(Number(e.target.value))}
+              onChange={(e) => {
+                const newValue = Number(e.target.value);
+                setMusicVolume(newValue);
+              }}
               className="w-full"
             />
           </div>
@@ -296,6 +305,11 @@ export default function Home() {
               音楽を有効にする
             </label>
           </div>
+          {!musicEnabled && (
+            <div className="text-yellow-400 text-sm">
+              ※ 音楽ファイルが存在しない場合、エラーが表示されることがありますが、ゲームは正常に動作します。
+            </div>
+          )}
           <button
             onClick={() => setViewMode("title")}
             className="retro-button w-full mt-8"
