@@ -109,21 +109,74 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
         canvas.width = size;
         canvas.height = size;
 
-      // 固定された背景を描画
+      // 地形と背景を描画
       for (let y = 0; y < boardSize; y++) {
         for (let x = 0; x < boardSize; x++) {
           const px = x * cellSize;
           const py = y * cellSize;
-          const pattern = backgroundPattern[y]?.[x] || { color: "#7cb342", dots: [] };
+          const cell = gameState.cells[y]?.[x];
+          const terrain = cell?.terrain || "plain";
           
-          // 背景色
-          ctx.fillStyle = pattern.color;
+          // 地形に応じた背景色
+          let terrainColor = "#7cb342"; // デフォルト（平地）
+          switch (terrain) {
+            case "water":
+              terrainColor = "#2196F3"; // 青（水）
+              break;
+            case "rock":
+              terrainColor = "#757575"; // グレー（岩）
+              break;
+            case "tree":
+              terrainColor = "#4CAF50"; // 緑（木）
+              break;
+            case "swamp":
+              terrainColor = "#795548"; // 茶色（沼地）
+              break;
+            case "mountain":
+              terrainColor = "#9E9E9E"; // ライトグレー（山）
+              break;
+            case "plain":
+            default:
+              terrainColor = "#7cb342"; // 緑（平地）
+              break;
+          }
+          
+          ctx.fillStyle = terrainColor;
           ctx.fillRect(px, py, cellSize, cellSize);
           
-          // 草のテクスチャ（固定位置）
-          ctx.fillStyle = "#689f38";
-          for (const dot of pattern.dots) {
-            ctx.fillRect(px + dot.x, py + dot.y, 1, 1);
+          // 平地の場合のみ草のテクスチャを描画
+          if (terrain === "plain") {
+            const pattern = backgroundPattern[y]?.[x] || { color: "#7cb342", dots: [] };
+            ctx.fillStyle = "#689f38";
+            for (const dot of pattern.dots) {
+              ctx.fillRect(px + dot.x, py + dot.y, 1, 1);
+            }
+          }
+          
+          // 地形のアイコンを描画（小さく）
+          ctx.fillStyle = "#000";
+          ctx.font = `${Math.floor(cellSize * 0.3)}px monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          const iconX = px + cellSize / 2;
+          const iconY = py + cellSize / 2;
+          
+          switch (terrain) {
+            case "water":
+              ctx.fillText("~", iconX, iconY);
+              break;
+            case "rock":
+              ctx.fillText("■", iconX, iconY);
+              break;
+            case "tree":
+              ctx.fillText("♠", iconX, iconY);
+              break;
+            case "swamp":
+              ctx.fillText("≈", iconX, iconY);
+              break;
+            case "mountain":
+              ctx.fillText("▲", iconX, iconY);
+              break;
           }
         }
       }

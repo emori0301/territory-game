@@ -2,6 +2,7 @@
 
 export type Sex = "male" | "female";
 export type UnitTrait = "painter" | "aggressive" | "berserker" | "wanderer" | "kamikaze" | "scout" | "normal";
+export type TerrainType = "plain" | "water" | "rock" | "tree" | "swamp" | "mountain";
 
 export interface Unit {
   id: string;
@@ -20,6 +21,7 @@ export interface Cell {
   y: number;
   ownerFactionId: string | null;
   unitId: string | null;
+  terrain: TerrainType; // 地形タイプ
 }
 
 export interface Faction {

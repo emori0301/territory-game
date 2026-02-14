@@ -1,7 +1,7 @@
 // ゲームユーティリティ関数
 
 import { BOARD_SIZE } from "./constants";
-import type { Cell, Unit } from "./types";
+import type { Cell, Unit, TerrainType } from "./types";
 
 /**
  * 座標が盤面内かどうかをチェック

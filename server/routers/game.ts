@@ -35,6 +35,7 @@ function serializeGameState(gameState: GameState): GameState {
           y: cell.y,
           ownerFactionId: cell.ownerFactionId,
           unitId: cell.unitId,
+          terrain: cell.terrain || "plain",
         })),
       ),
       units: gameState.units.map((unit) => ({

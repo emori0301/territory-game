@@ -273,6 +273,30 @@ export default function Home() {
 
   // 設定画面
   if (viewMode === "settings") {
+    const [tempCellSize, setTempCellSize] = useState(cellSize);
+    const [tempBoardSize, setTempBoardSize] = useState(boardSize);
+    const [tempFactionCount, setTempFactionCount] = useState(factionCount);
+    const [tempMusicVolume, setTempMusicVolume] = useState(musicVolume);
+    const [tempMusicEnabled, setTempMusicEnabled] = useState(musicEnabled);
+
+    const handleApplySettings = () => {
+      setCellSize(tempCellSize);
+      setBoardSize(tempBoardSize);
+      setFactionCount(tempFactionCount);
+      setMusicVolume(tempMusicVolume);
+      setMusicEnabled(tempMusicEnabled);
+      
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cellSize", tempCellSize.toString());
+        localStorage.setItem("boardSize", tempBoardSize.toString());
+        localStorage.setItem("factionCount", tempFactionCount.toString());
+        localStorage.setItem("musicVolume", tempMusicVolume.toString());
+        localStorage.setItem("musicEnabled", tempMusicEnabled.toString());
+      }
+      
+      setViewMode("title");
+    };
+
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8">
         <h1 className="text-6xl font-bold mb-12 retro-title" suppressHydrationWarning>
@@ -281,66 +305,54 @@ export default function Home() {
         <div className="retro-panel min-w-[400px] space-y-6">
           <div>
             <label className="text-green-400 mb-2 block">
-              マスの大きさ: {cellSize}px
+              マスの大きさ: {tempCellSize}px
             </label>
             <input
               type="range"
               min="10"
               max="30"
-              value={cellSize}
-              onChange={(e) => {
-                const newValue = Number(e.target.value);
-                setCellSize(newValue);
-              }}
+              value={tempCellSize}
+              onChange={(e) => setTempCellSize(Number(e.target.value))}
               className="w-full"
             />
           </div>
           <div>
             <label className="text-green-400 mb-2 block">
-              マスの数（ボードサイズ）: {boardSize}×{boardSize}
+              マスの数（ボードサイズ）: {tempBoardSize}×{tempBoardSize}
             </label>
             <input
               type="range"
               min="20"
               max="50"
               step="5"
-              value={boardSize}
-              onChange={(e) => {
-                const newValue = Number(e.target.value);
-                setBoardSize(newValue);
-              }}
+              value={tempBoardSize}
+              onChange={(e) => setTempBoardSize(Number(e.target.value))}
               className="w-full"
             />
           </div>
           <div>
             <label className="text-green-400 mb-2 block">
-              勢力数: {factionCount}
+              勢力数: {tempFactionCount}
             </label>
             <input
               type="range"
               min="2"
               max="4"
-              value={factionCount}
-              onChange={(e) => {
-                const newValue = Number(e.target.value);
-                setFactionCount(newValue);
-              }}
+              value={tempFactionCount}
+              onChange={(e) => setTempFactionCount(Number(e.target.value))}
               className="w-full"
             />
           </div>
           <div>
             <label className="text-green-400 mb-2 block">
-              音楽音量: {musicVolume}%
+              音楽音量: {tempMusicVolume}%
             </label>
             <input
               type="range"
               min="0"
               max="100"
-              value={musicVolume}
-              onChange={(e) => {
-                const newValue = Number(e.target.value);
-                setMusicVolume(newValue);
-              }}
+              value={tempMusicVolume}
+              onChange={(e) => setTempMusicVolume(Number(e.target.value))}
               className="w-full"
             />
           </div>
@@ -348,25 +360,33 @@ export default function Home() {
             <input
               type="checkbox"
               id="musicEnabled"
-              checked={musicEnabled}
-              onChange={(e) => setMusicEnabled(e.target.checked)}
+              checked={tempMusicEnabled}
+              onChange={(e) => setTempMusicEnabled(e.target.checked)}
               className="w-5 h-5"
             />
             <label htmlFor="musicEnabled" className="text-green-400">
               音楽を有効にする
             </label>
           </div>
-          {!musicEnabled && (
+          {!tempMusicEnabled && (
             <div className="text-yellow-400 text-sm">
               ※ 音楽ファイルが存在しない場合、エラーが表示されることがありますが、ゲームは正常に動作します。
             </div>
           )}
-          <button
-            onClick={() => setViewMode("title")}
-            className="retro-button w-full mt-8"
-          >
-            タイトルに戻る
-          </button>
+          <div className="flex gap-4 mt-8">
+            <button
+              onClick={handleApplySettings}
+              className="retro-button flex-1"
+            >
+              決定
+            </button>
+            <button
+              onClick={() => setViewMode("title")}
+              className="retro-button flex-1"
+            >
+              キャンセル
+            </button>
+          </div>
         </div>
       </main>
     );

@@ -5,7 +5,20 @@ import { getRandomSex, getRandomTrait, isValidPosition, randomInt } from "./util
 import type { Cell, Faction, GameState, Unit } from "./types";
 
 /**
- * 空の盤面を作成
+ * ランダムな地形を生成
+ */
+function getRandomTerrain(): TerrainType {
+  const rand = Math.random();
+  if (rand < 0.6) return "plain"; // 60% 平地
+  if (rand < 0.7) return "water"; // 10% 水
+  if (rand < 0.8) return "rock"; // 10% 岩
+  if (rand < 0.9) return "tree"; // 10% 木
+  if (rand < 0.95) return "swamp"; // 5% 沼地
+  return "mountain"; // 5% 山
+}
+
+/**
+ * 空の盤面を作成（地形を含む）
  */
 export function createEmptyBoard(boardSize: number = BOARD_SIZE): Cell[][] {
   const cells: Cell[][] = [];
@@ -17,6 +30,7 @@ export function createEmptyBoard(boardSize: number = BOARD_SIZE): Cell[][] {
         y,
         ownerFactionId: null,
         unitId: null,
+        terrain: getRandomTerrain(),
       };
     }
   }

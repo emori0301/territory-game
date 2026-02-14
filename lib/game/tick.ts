@@ -11,7 +11,7 @@ import {
   resolveMoveIntents,
 } from "./movement";
 import { resolveCollisions } from "./collision";
-import { getSurroundingCells } from "./utils";
+import { getSurroundingCells, getTerrainValueCost } from "./utils";
 import { spawnUnitsFromTerritory } from "./territory";
 import type { Cell, GameState, Unit } from "./types";
 

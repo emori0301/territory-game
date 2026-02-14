@@ -1,7 +1,7 @@
 // 移動処理
 
 import { MOVE_DISTANCE, ENEMY_DETECTION_RANGE } from "./constants";
-import { getNextPosition, getRandomDirection, isValidPosition } from "./utils";
+import { getNextPosition, getRandomDirection, isValidPosition, canPassTerrain, getTerrainValueCost } from "./utils";
 import type { GameState, MoveIntent, Unit } from "./types";
 
 /**
