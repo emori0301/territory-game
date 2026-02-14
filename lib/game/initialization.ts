@@ -34,16 +34,16 @@ function getRandomTerrain(
   })();
   
   // 周囲に水がある場合は水の出現確率を上げる
-  if (hasNearbyWater && rand < 0.4) {
+  if (hasNearbyWater && rand < 0.3) {
     return "water";
   }
   
-  if (rand < 0.65) return "plain"; // 65% 平地
-  if (rand < 0.75) return "water"; // 10% 水（単独でも出現）
-  if (rand < 0.85) return "rock"; // 10% 岩
-  if (rand < 0.93) return "tree"; // 8% 木
-  if (rand < 0.97) return "swamp"; // 4% 沼地
-  return "mountain"; // 3% 山
+  if (rand < 0.85) return "plain"; // 85% 平地
+  if (rand < 0.90) return "water"; // 5% 水（単独でも出現）
+  if (rand < 0.94) return "rock"; // 4% 岩
+  if (rand < 0.97) return "tree"; // 3% 木
+  if (rand < 0.99) return "swamp"; // 2% 沼地
+  return "mountain"; // 1% 山
 }
 
 /**

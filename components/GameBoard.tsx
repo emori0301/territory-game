@@ -356,9 +356,8 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
         <div
           className="absolute bg-black border-2 border-green-500 text-green-400 p-2 pointer-events-none z-10"
           style={{
-            left: `${Math.min(hoveredUnit.x + 10, typeof window !== 'undefined' ? window.innerWidth - 200 : hoveredUnit.x + 10)}px`,
-            top: `${Math.max(hoveredUnit.y - 10, 10)}px`,
-            transform: hoveredUnit.y < 100 ? "translateY(0)" : "translateY(-100%)",
+            right: "220px", // 右下のオレンジ（勢力D）の下に表示
+            bottom: "20px",
             fontFamily: "Courier New, monospace",
             fontSize: "12px",
             boxShadow: "0 0 10px rgba(0, 255, 0, 0.5)",

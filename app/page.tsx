@@ -124,28 +124,31 @@ export default function Home() {
   // 音楽の設定
   useEffect(() => {
     if (musicEnabled && viewMode === "game" && gameId) {
-      // 音楽ファイルを読み込む（複数の候補を試す）
-      const musicFiles = [
-        "/music/rpg-bgm.mp3",
-        "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav", // テスト用（実際のBGMに置き換え）
-      ];
+      // 音楽ファイルを読み込む
+      const musicFile = "/music/rpg-bgm.mp3";
       
       if (!audioRef.current) {
-        audioRef.current = new Audio(musicFiles[0]!);
+        audioRef.current = new Audio(musicFile);
         audioRef.current.loop = true;
         audioRef.current.volume = musicVolume / 100;
+        audioRef.current.preload = "auto";
         
         // エラーハンドリング
         audioRef.current.addEventListener("error", (e) => {
           console.warn("音楽ファイルの読み込みに失敗しました。音楽ファイルが存在しない可能性があります。");
           console.warn("音楽ファイルを /public/music/rpg-bgm.mp3 に配置してください。");
-          // エラー時は音楽を無効化
-          setMusicEnabled(false);
+          console.warn("現在のaudio要素の状態:", audioRef.current?.readyState);
+          console.warn("エラー詳細:", e);
         });
         
         // 読み込み完了時の処理
         audioRef.current.addEventListener("canplaythrough", () => {
           console.log("音楽ファイルの読み込みが完了しました");
+        });
+        
+        // 読み込み開始時の処理
+        audioRef.current.addEventListener("loadstart", () => {
+          console.log("音楽ファイルの読み込みを開始しました");
         });
       }
       
@@ -162,8 +165,11 @@ export default function Home() {
             .catch((error) => {
               // 音楽ファイルが存在しない場合や自動再生がブロックされた場合
               console.warn("音楽の再生に失敗しました:", error);
+              console.warn("エラー名:", error.name);
+              console.warn("エラーメッセージ:", error.message);
               if (error.name === "NotAllowedError") {
                 console.warn("ブラウザの自動再生ポリシーにより、音楽の再生がブロックされました。");
+                console.warn("ユーザーがページを操作すると音楽が再生される可能性があります。");
               }
             });
         }
@@ -175,9 +181,7 @@ export default function Home() {
     }
 
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      // クリーンアップ時は何もしない（音楽を継続させる）
     };
   }, [musicEnabled, musicVolume, viewMode, gameId]);
 
