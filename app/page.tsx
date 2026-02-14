@@ -9,12 +9,14 @@ export default function Home() {
   const [gameId, setGameId] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
+  const utils = trpc.useUtils();
   const createGame = trpc.game.create.useMutation({
     onSuccess: (data) => {
       console.log("Game created:", data);
       setGameId(data.id);
       setIsRunning(false);
       // ゲーム状態を取得（gameIdが設定されれば自動的にクエリが実行される）
+      utils.game.getState.invalidate({ gameId: data.id });
     },
     onError: (error) => {
       console.error("Failed to create game:", error);
