@@ -151,7 +151,22 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
     } catch (error) {
       console.error("Error drawing game board:", error);
     }
-  }, [gameState, cellSize, backgroundPattern]);
+  }, [gameState, cellSize, backgroundPattern, isMounted]);
+
+  if (!isMounted) {
+    return (
+      <div className="flex justify-center">
+        <div className="border-4 border-green-500 shadow-2xl" style={{ 
+          width: cellSize * 30,
+          height: cellSize * 30,
+          imageRendering: "pixelated",
+          imageRendering: "-moz-crisp-edges",
+          imageRendering: "crisp-edges",
+          boxShadow: "0 0 20px rgba(0, 255, 0, 0.5)"
+        }} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center">
