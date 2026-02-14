@@ -21,6 +21,7 @@ function handleMaleMaleCollision(
     value: mergedValue,
     isHero: unitA.isHero || unitB.isHero,
     age: Math.min(unitA.age, unitB.age),
+    trait: unitA.trait, // 統合時はunitAの特性を継承
   };
 
   // unitBを削除し、unitAを統合
