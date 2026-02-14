@@ -34,7 +34,8 @@ export interface GameState {
   winnerId: string | null;
   factions: Faction[];
   units: Unit[];
-  cells: Cell[][]; // 30x30の2次元配列
+  cells: Cell[][]; // 動的なサイズの2次元配列
+  boardSize: number; // ボードサイズを追加
 }
 
 export interface MoveIntent {

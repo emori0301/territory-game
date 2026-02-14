@@ -52,6 +52,7 @@ function serializeGameState(gameState: GameState): GameState {
         id: faction.id,
         name: faction.name,
       })),
+      boardSize: gameState.boardSize || 30,
     };
   } catch (error) {
     console.error("Error serializing game state:", error);
@@ -62,23 +63,28 @@ function serializeGameState(gameState: GameState): GameState {
 
 export const gameRouter = createTRPCRouter({
   // 新しいゲームを作成
-  create: publicProcedure.mutation(() => {
-    try {
-      console.log("Creating new game...");
-      const gameState = createNewGame();
-      console.log("Game created:", gameState.id, "Units:", gameState.units.length);
-      gameStore.set(gameState.id, gameState);
-      const serialized = serializeGameState(gameState);
-      console.log("Game serialized successfully");
-      return serialized;
-    } catch (error) {
-      console.error("Error creating game:", error);
-      if (error instanceof Error) {
-        console.error("Error stack:", error.stack);
+  create: publicProcedure
+    .input(z.object({ 
+      boardSize: z.number().min(10).max(50).optional().default(30),
+    }).optional())
+    .mutation(({ input }) => {
+      try {
+        const boardSize = input?.boardSize || 30;
+        console.log("Creating new game with board size:", boardSize);
+        const gameState = createNewGame(boardSize);
+        console.log("Game created:", gameState.id, "Units:", gameState.units.length);
+        gameStore.set(gameState.id, gameState);
+        const serialized = serializeGameState(gameState);
+        console.log("Game serialized successfully");
+        return serialized;
+      } catch (error) {
+        console.error("Error creating game:", error);
+        if (error instanceof Error) {
+          console.error("Error stack:", error.stack);
+        }
+        throw new Error(`Failed to create game: ${error instanceof Error ? error.message : String(error)}`);
       }
-      throw new Error(`Failed to create game: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }),
+    }),
 
   // ゲーム状態を取得
   getState: publicProcedure
@@ -112,11 +118,15 @@ export const gameRouter = createTRPCRouter({
 
   // ゲームをリセット
   reset: publicProcedure
-    .input(z.object({ gameId: z.string() }))
+    .input(z.object({ 
+      gameId: z.string(),
+      boardSize: z.number().min(10).max(50).optional().default(30),
+    }))
     .mutation(({ input }) => {
       try {
+        const boardSize = input.boardSize || 30;
         // 既存のゲームを削除して新しいゲームを作成
-        const newGameState = createNewGame();
+        const newGameState = createNewGame(boardSize);
         // 既存のgameIdを保持して新しいゲームを作成
         const resetGameState = {
           ...newGameState,

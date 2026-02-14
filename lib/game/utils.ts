@@ -6,8 +6,8 @@ import type { Cell, Unit } from "./types";
 /**
  * 座標が盤面内かどうかをチェック
  */
-export function isValidPosition(x: number, y: number): boolean {
-  return x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE;
+export function isValidPosition(x: number, y: number, boardSize: number = BOARD_SIZE): boolean {
+  return x >= 0 && x < boardSize && y >= 0 && y < boardSize;
 }
 
 /**

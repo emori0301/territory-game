@@ -103,10 +103,11 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    try {
-      const size = cellSize * 30;
-      canvas.width = size;
-      canvas.height = size;
+      try {
+        const boardSize = gameState.boardSize || 30;
+        const size = cellSize * boardSize;
+        canvas.width = size;
+        canvas.height = size;
 
       // 固定された背景を描画
       for (let y = 0; y < 30; y++) {
@@ -128,8 +129,8 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
       }
 
       // 領地を描画（半透明で重ねる）
-      for (let y = 0; y < 30; y++) {
-        for (let x = 0; x < 30; x++) {
+      for (let y = 0; y < boardSize; y++) {
+        for (let x = 0; x < boardSize; x++) {
           const cell = gameState.cells[y]?.[x];
           if (!cell) continue;
 

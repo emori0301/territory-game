@@ -7,11 +7,11 @@ import type { Cell, Faction, GameState, Unit } from "./types";
 /**
  * 空の盤面を作成
  */
-export function createEmptyBoard(): Cell[][] {
+export function createEmptyBoard(boardSize: number = BOARD_SIZE): Cell[][] {
   const cells: Cell[][] = [];
-  for (let y = 0; y < BOARD_SIZE; y++) {
+  for (let y = 0; y < boardSize; y++) {
     cells[y] = [];
-    for (let x = 0; x < BOARD_SIZE; x++) {
+    for (let x = 0; x < boardSize; x++) {
       cells[y]![x] = {
         x,
         y,
@@ -26,10 +26,10 @@ export function createEmptyBoard(): Cell[][] {
 /**
  * 初期コマを配置
  * 4勢力を四隅に配置
- * 勢力A: 左上 (0-9, 0-9)
- * 勢力B: 右上 (20-29, 0-9)
- * 勢力C: 左下 (0-9, 20-29)
- * 勢力D: 右下 (20-29, 20-29)
+ * 勢力A: 左上
+ * 勢力B: 右上
+ * 勢力C: 左下
+ * 勢力D: 右下
  */
 export function placeInitialUnits(
   cells: Cell[][],
@@ -37,16 +37,18 @@ export function placeInitialUnits(
   factionB: Faction,
   factionC: Faction,
   factionD: Faction,
+  boardSize: number = BOARD_SIZE,
 ): Unit[] {
   const units: Unit[] = [];
   let unitIdCounter = 0;
 
   // 勢力A（左上）
+  const cornerSize = Math.floor(boardSize / 3);
   for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
     let placed = false;
     while (!placed) {
-      const x = randomInt(0, 9);
-      const y = randomInt(0, 9);
+      const x = randomInt(0, cornerSize - 1);
+      const y = randomInt(0, cornerSize - 1);
       if (cells[y]![x]!.unitId === null) {
         const sex = getRandomSex();
         const unit: Unit = {
@@ -71,8 +73,8 @@ export function placeInitialUnits(
   for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
     let placed = false;
     while (!placed) {
-      const x = randomInt(20, 29);
-      const y = randomInt(0, 9);
+      const x = randomInt(boardSize - cornerSize, boardSize - 1);
+      const y = randomInt(0, cornerSize - 1);
       if (cells[y]![x]!.unitId === null) {
         const sex = getRandomSex();
         const unit: Unit = {
@@ -97,8 +99,8 @@ export function placeInitialUnits(
   for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
     let placed = false;
     while (!placed) {
-      const x = randomInt(0, 9);
-      const y = randomInt(20, 29);
+      const x = randomInt(0, cornerSize - 1);
+      const y = randomInt(boardSize - cornerSize, boardSize - 1);
       if (cells[y]![x]!.unitId === null) {
         const sex = getRandomSex();
         const unit: Unit = {
@@ -123,8 +125,8 @@ export function placeInitialUnits(
   for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
     let placed = false;
     while (!placed) {
-      const x = randomInt(20, 29);
-      const y = randomInt(20, 29);
+      const x = randomInt(boardSize - cornerSize, boardSize - 1);
+      const y = randomInt(boardSize - cornerSize, boardSize - 1);
       if (cells[y]![x]!.unitId === null) {
         const sex = getRandomSex();
         const unit: Unit = {
@@ -151,7 +153,7 @@ export function placeInitialUnits(
 /**
  * 新しいゲーム状態を作成
  */
-export function createNewGame(): GameState {
+export function createNewGame(boardSize: number = BOARD_SIZE): GameState {
   try {
     const factionA: Faction = {
       id: "faction-a",
@@ -170,8 +172,8 @@ export function createNewGame(): GameState {
       name: "勢力D（オレンジ）",
     };
 
-    const cells = createEmptyBoard();
-    const units = placeInitialUnits(cells, factionA, factionB, factionC, factionD);
+    const cells = createEmptyBoard(boardSize);
+    const units = placeInitialUnits(cells, factionA, factionB, factionC, factionD, boardSize);
 
     const gameState: GameState = {
       id: `game-${Date.now()}`,
@@ -181,6 +183,7 @@ export function createNewGame(): GameState {
       factions: [factionA, factionB, factionC, factionD],
       units,
       cells,
+      boardSize,
     };
 
     // バリデーション

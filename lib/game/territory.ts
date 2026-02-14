@@ -14,8 +14,9 @@ export function findTerritoryClusters(
   const visited = new Set<string>();
   const clusters: Array<Array<{ x: number; y: number }>> = [];
 
-  for (let y = 0; y < BOARD_SIZE; y++) {
-    for (let x = 0; x < BOARD_SIZE; x++) {
+  const boardSize = gameState.boardSize || BOARD_SIZE;
+  for (let y = 0; y < boardSize; y++) {
+    for (let x = 0; x < boardSize; x++) {
       const key = `${x},${y}`;
       if (visited.has(key)) continue;
 

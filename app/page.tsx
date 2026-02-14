@@ -48,11 +48,12 @@ export default function Home() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("cellSize", cellSize.toString());
+      localStorage.setItem("boardSize", boardSize.toString());
       localStorage.setItem("factionCount", factionCount.toString());
       localStorage.setItem("musicVolume", musicVolume.toString());
       localStorage.setItem("musicEnabled", musicEnabled.toString());
     }
-  }, [cellSize, factionCount, musicVolume, musicEnabled]);
+  }, [cellSize, boardSize, factionCount, musicVolume, musicEnabled]);
 
   const utils = trpc.useUtils();
   const createGame = trpc.game.create.useMutation({
@@ -283,6 +284,23 @@ export default function Home() {
               onChange={(e) => {
                 const newValue = Number(e.target.value);
                 setCellSize(newValue);
+              }}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="text-green-400 mb-2 block">
+              マスの数（ボードサイズ）: {boardSize}×{boardSize}
+            </label>
+            <input
+              type="range"
+              min="20"
+              max="50"
+              step="5"
+              value={boardSize}
+              onChange={(e) => {
+                const newValue = Number(e.target.value);
+                setBoardSize(newValue);
               }}
               className="w-full"
             />
