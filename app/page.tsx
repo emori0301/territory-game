@@ -1,13 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc/react";
 import { GameBoard } from "@/components/GameBoard";
 import type { GameState } from "@/lib/game/types";
 
+type ViewMode = "title" | "game" | "settings";
+
 export default function Home() {
+  const [viewMode, setViewMode] = useState<ViewMode>("title");
   const [gameId, setGameId] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  
+  // 設定
+  const [cellSize, setCellSize] = useState(20);
+  const [factionCount, setFactionCount] = useState(4);
+  const [musicVolume, setMusicVolume] = useState(50);
+  const [musicEnabled, setMusicEnabled] = useState(true);
+  
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const utils = trpc.useUtils();
   const createGame = trpc.game.create.useMutation({
@@ -15,7 +26,7 @@ export default function Home() {
       console.log("Game created:", data);
       setGameId(data.id);
       setIsRunning(false);
-      // ゲーム状態を取得（gameIdが設定されれば自動的にクエリが実行される）
+      setViewMode("game");
     },
     onError: (error) => {
       console.error("Failed to create game:", error);
@@ -26,7 +37,7 @@ export default function Home() {
     { gameId: gameId! },
     { 
       enabled: !!gameId, 
-      refetchInterval: isRunning ? 500 : false, // 100msから500msに変更
+      refetchInterval: isRunning ? 500 : false,
       onError: (error) => {
         console.error("Failed to get game state:", error);
       },
@@ -48,6 +59,31 @@ export default function Home() {
   });
 
   const gameState: GameState | null = getState.data || null;
+
+  // 音楽の設定
+  useEffect(() => {
+    if (musicEnabled && viewMode === "game") {
+      if (!audioRef.current) {
+        audioRef.current = new Audio("/music/rpg-bgm.mp3");
+        audioRef.current.loop = true;
+        audioRef.current.volume = musicVolume / 100;
+      }
+      audioRef.current.volume = musicVolume / 100;
+      audioRef.current.play().catch((error) => {
+        console.error("Failed to play music:", error);
+      });
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [musicEnabled, musicVolume, viewMode]);
 
   const handleCreateGame = async () => {
     try {
@@ -75,20 +111,28 @@ export default function Home() {
     try {
       const newGame = await resetGame.mutateAsync({ gameId });
       setIsRunning(false);
-      // ゲーム状態を再取得
       await getState.refetch();
     } catch (error) {
       console.error("Reset failed:", error);
     }
   };
 
-  // 自動tick実行（500ms間隔に変更）
+  const handleBackToTitle = () => {
+    setIsRunning(false);
+    setGameId(null);
+    setViewMode("title");
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+  };
+
+  // 自動tick実行
   useEffect(() => {
     if (!isRunning || !gameId || gameState?.status === "finished") return;
 
     const interval = setInterval(async () => {
       await executeTick.mutateAsync({ gameId });
-    }, 500); // 100msから500msに変更
+    }, 500);
 
     return () => clearInterval(interval);
   }, [isRunning, gameId, executeTick, gameState?.status]);
@@ -119,70 +163,163 @@ export default function Home() {
   const factionC = getFactionStats("faction-c");
   const factionD = getFactionStats("faction-d");
 
+  // タイトル画面
+  if (viewMode === "title") {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-8">
+        <h1 className="text-8xl font-bold mb-16 retro-title" suppressHydrationWarning>
+          MONARCHY
+        </h1>
+        <div className="flex flex-col gap-6">
+          <button
+            onClick={() => {
+              handleCreateGame();
+            }}
+            disabled={createGame.isPending}
+            className="retro-button text-2xl px-12 py-6"
+          >
+            {createGame.isPending ? "作成中..." : "GAME START"}
+          </button>
+          <button
+            onClick={() => setViewMode("settings")}
+            className="retro-button text-2xl px-12 py-6"
+          >
+            SETTING
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // 設定画面
+  if (viewMode === "settings") {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-8">
+        <h1 className="text-6xl font-bold mb-12 retro-title" suppressHydrationWarning>
+          SETTING
+        </h1>
+        <div className="retro-panel min-w-[400px] space-y-6">
+          <div>
+            <label className="text-green-400 mb-2 block">
+              マスの大きさ: {cellSize}px
+            </label>
+            <input
+              type="range"
+              min="10"
+              max="30"
+              value={cellSize}
+              onChange={(e) => setCellSize(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="text-green-400 mb-2 block">
+              勢力数: {factionCount}
+            </label>
+            <input
+              type="range"
+              min="2"
+              max="4"
+              value={factionCount}
+              onChange={(e) => setFactionCount(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="text-green-400 mb-2 block">
+              音楽音量: {musicVolume}%
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={musicVolume}
+              onChange={(e) => setMusicVolume(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <input
+              type="checkbox"
+              id="musicEnabled"
+              checked={musicEnabled}
+              onChange={(e) => setMusicEnabled(e.target.checked)}
+              className="w-5 h-5"
+            />
+            <label htmlFor="musicEnabled" className="text-green-400">
+              音楽を有効にする
+            </label>
+          </div>
+          <button
+            onClick={() => setViewMode("title")}
+            className="retro-button w-full mt-8"
+          >
+            タイトルに戻る
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // ゲーム画面
   return (
     <main className="flex min-h-screen flex-col p-4">
       {/* 画面上部: ボタンのみ */}
       <div className="flex gap-4 justify-center mb-4 flex-wrap">
-        {!gameId ? (
-          <button
-            onClick={handleCreateGame}
-            disabled={createGame.isPending}
-            className="retro-button"
-          >
-            {createGame.isPending ? "作成中..." : "ゲーム開始"}
-          </button>
-        ) : (
+        {!isRunning ? (
           <>
-            {!isRunning ? (
-              <>
-                <button
-                  onClick={handleStart}
-                  className="retro-button"
-                >
-                  開始
-                </button>
-                <button
-                  onClick={handleStep}
-                  disabled={executeTick.isPending || gameState?.status === "finished"}
-                  className="retro-button"
-                >
-                  {executeTick.isPending ? "実行中..." : "1ステップ実行"}
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={handleStop}
-                className="retro-button"
-              >
-                停止
-              </button>
-            )}
             <button
-              onClick={handleReset}
-              disabled={resetGame.isPending}
+              onClick={handleStart}
               className="retro-button"
             >
-              {resetGame.isPending ? "リセット中..." : "リセット"}
+              開始
             </button>
-            {gameState && (
-              <div className="text-green-400 retro-panel flex items-center px-4">
-                経過日数: <span className="font-bold ml-2">{gameState.tick}</span>日
-                {gameState.status === "finished" && (
-                  <span className="ml-4 text-green-500 font-bold">
-                    {gameState.winnerId === "faction-a"
-                      ? "勢力A（青）の勝利！"
-                      : gameState.winnerId === "faction-b"
-                        ? "勢力B（赤）の勝利！"
-                        : gameState.winnerId === "faction-c"
-                          ? "勢力C（緑）の勝利！"
-                          : gameState.winnerId === "faction-d"
-                            ? "勢力D（オレンジ）の勝利！"
-                            : "引き分け"}
-                  </span>
-                )}
-              </div>
-            )}
+            <button
+              onClick={handleStep}
+              disabled={executeTick.isPending || gameState?.status === "finished"}
+              className="retro-button"
+            >
+              {executeTick.isPending ? "実行中..." : "1ステップ実行"}
+            </button>
           </>
+        ) : (
+          <button
+            onClick={handleStop}
+            className="retro-button"
+          >
+            停止
+          </button>
+        )}
+        <button
+          onClick={handleReset}
+          disabled={resetGame.isPending}
+          className="retro-button"
+        >
+          {resetGame.isPending ? "リセット中..." : "リセット"}
+        </button>
+        <button
+          onClick={handleBackToTitle}
+          className="retro-button"
+        >
+          タイトルに戻る
+        </button>
+        {gameState && (
+          <div className="text-green-400 retro-panel flex items-center px-4">
+            経過日数: <span className="font-bold ml-2">{gameState.tick}</span>日
+            {gameState.status === "finished" && (
+              <span className="ml-4 text-green-500 font-bold">
+                {gameState.winnerId === "faction-a"
+                  ? "勢力A（青）の勝利！"
+                  : gameState.winnerId === "faction-b"
+                    ? "勢力B（赤）の勝利！"
+                    : gameState.winnerId === "faction-c"
+                      ? "勢力C（緑）の勝利！"
+                      : gameState.winnerId === "faction-d"
+                        ? "勢力D（オレンジ）の勝利！"
+                        : "引き分け"}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
@@ -221,7 +358,7 @@ export default function Home() {
 
         {/* Canvas */}
         <div suppressHydrationWarning>
-          <GameBoard gameState={gameState} cellSize={20} />
+          <GameBoard gameState={gameState} cellSize={cellSize} />
         </div>
 
         {/* 右側: 赤（上）と黄色（下） */}
