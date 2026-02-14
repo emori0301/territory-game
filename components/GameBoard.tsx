@@ -10,9 +10,10 @@ interface GameBoardProps {
 
 export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const backgroundPatternRef = useRef<Array<Array<{ color: string; dots: Array<{ x: number; y: number }> }>> | null>(null);
   
-  // 背景パターンを固定（useMemoで一度だけ生成）
-  const backgroundPattern = useMemo(() => {
+  // 背景パターンを固定（初回のみ生成、Hydrationエラーを防ぐ）
+  if (!backgroundPatternRef.current) {
     const pattern: Array<Array<{ color: string; dots: Array<{ x: number; y: number }> }>> = [];
     const grassColor = "#7cb342"; // 全て同じ色
     
@@ -33,8 +34,10 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
         });
       }
     }
-    return pattern;
-  }, [cellSize]);
+    backgroundPatternRef.current = pattern;
+  }
+  
+  const backgroundPattern = backgroundPatternRef.current;
 
   useEffect(() => {
     if (!gameState || !canvasRef.current) return;
