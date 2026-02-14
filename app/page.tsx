@@ -124,8 +124,14 @@ export default function Home() {
   // 音楽の設定
   useEffect(() => {
     if (musicEnabled && viewMode === "game" && gameId) {
+      // 音楽ファイルを読み込む（複数の候補を試す）
+      const musicFiles = [
+        "/music/rpg-bgm.mp3",
+        "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav", // テスト用（実際のBGMに置き換え）
+      ];
+      
       if (!audioRef.current) {
-        audioRef.current = new Audio("/music/rpg-bgm.mp3");
+        audioRef.current = new Audio(musicFiles[0]!);
         audioRef.current.loop = true;
         audioRef.current.volume = musicVolume / 100;
         
@@ -133,17 +139,34 @@ export default function Home() {
         audioRef.current.addEventListener("error", (e) => {
           console.warn("音楽ファイルの読み込みに失敗しました。音楽ファイルが存在しない可能性があります。");
           console.warn("音楽ファイルを /public/music/rpg-bgm.mp3 に配置してください。");
+          // エラー時は音楽を無効化
+          setMusicEnabled(false);
+        });
+        
+        // 読み込み完了時の処理
+        audioRef.current.addEventListener("canplaythrough", () => {
+          console.log("音楽ファイルの読み込みが完了しました");
         });
       }
       
       if (audioRef.current) {
         audioRef.current.volume = musicVolume / 100;
-        audioRef.current.play().catch((error) => {
-          // 音楽ファイルが存在しない場合はエラーを無視
-          if (error.name !== "NotAllowedError") {
-            console.warn("音楽の再生に失敗しました:", error);
-          }
-        });
+        
+        // 音楽を再生
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log("音楽の再生を開始しました");
+            })
+            .catch((error) => {
+              // 音楽ファイルが存在しない場合や自動再生がブロックされた場合
+              console.warn("音楽の再生に失敗しました:", error);
+              if (error.name === "NotAllowedError") {
+                console.warn("ブラウザの自動再生ポリシーにより、音楽の再生がブロックされました。");
+              }
+            });
+        }
       }
     } else {
       if (audioRef.current) {

@@ -5,23 +5,54 @@ import { getRandomSex, getRandomTrait, isValidPosition, randomInt } from "./util
 import type { Cell, Faction, GameState, Unit } from "./types";
 
 /**
- * ランダムな地形を生成
+ * ランダムな地形を生成（水は固まって出現）
  */
-function getRandomTerrain(): TerrainType {
+function getRandomTerrain(
+  x: number,
+  y: number,
+  boardSize: number,
+  cells: Cell[][],
+): TerrainType {
   const rand = Math.random();
-  if (rand < 0.6) return "plain"; // 60% 平地
-  if (rand < 0.7) return "water"; // 10% 水
-  if (rand < 0.8) return "rock"; // 10% 岩
-  if (rand < 0.9) return "tree"; // 10% 木
-  if (rand < 0.95) return "swamp"; // 5% 沼地
-  return "mountain"; // 5% 山
+  
+  // 水は周囲に水がある場合に出現しやすくする（固まって出現）
+  const hasNearbyWater = (() => {
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+          const cell = cells[ny]?.[nx];
+          if (cell?.terrain === "water") {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  })();
+  
+  // 周囲に水がある場合は水の出現確率を上げる
+  if (hasNearbyWater && rand < 0.4) {
+    return "water";
+  }
+  
+  if (rand < 0.65) return "plain"; // 65% 平地
+  if (rand < 0.75) return "water"; // 10% 水（単独でも出現）
+  if (rand < 0.85) return "rock"; // 10% 岩
+  if (rand < 0.93) return "tree"; // 8% 木
+  if (rand < 0.97) return "swamp"; // 4% 沼地
+  return "mountain"; // 3% 山
 }
 
 /**
- * 空の盤面を作成（地形を含む）
+ * 空の盤面を作成（地形を含む、水は固まって出現）
  */
 export function createEmptyBoard(boardSize: number = BOARD_SIZE): Cell[][] {
   const cells: Cell[][] = [];
+  
+  // まず全てを平地で初期化
   for (let y = 0; y < boardSize; y++) {
     cells[y] = [];
     for (let x = 0; x < boardSize; x++) {
@@ -30,10 +61,18 @@ export function createEmptyBoard(boardSize: number = BOARD_SIZE): Cell[][] {
         y,
         ownerFactionId: null,
         unitId: null,
-        terrain: getRandomTerrain(),
+        terrain: "plain",
       };
     }
   }
+  
+  // 地形を生成（水は固まって出現するように）
+  for (let y = 0; y < boardSize; y++) {
+    for (let x = 0; x < boardSize; x++) {
+      cells[y]![x]!.terrain = getRandomTerrain(x, y, boardSize, cells);
+    }
+  }
+  
   return cells;
 }
 

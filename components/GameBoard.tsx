@@ -117,66 +117,32 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
           const cell = gameState.cells[y]?.[x];
           const terrain = cell?.terrain || "plain";
           
-          // 地形に応じた背景色
-          let terrainColor = "#7cb342"; // デフォルト（平地）
-          switch (terrain) {
-            case "water":
-              terrainColor = "#2196F3"; // 青（水）
-              break;
-            case "rock":
-              terrainColor = "#757575"; // グレー（岩）
-              break;
-            case "tree":
-              terrainColor = "#4CAF50"; // 緑（木）
-              break;
-            case "swamp":
-              terrainColor = "#795548"; // 茶色（沼地）
-              break;
-            case "mountain":
-              terrainColor = "#9E9E9E"; // ライトグレー（山）
-              break;
-            case "plain":
-            default:
-              terrainColor = "#7cb342"; // 緑（平地）
-              break;
-          }
-          
-          ctx.fillStyle = terrainColor;
+          // 基本の緑背景を描画（全ての地形の下に）
+          const pattern = backgroundPattern[y]?.[x] || { color: "#7cb342", dots: [] };
+          ctx.fillStyle = pattern.color;
           ctx.fillRect(px, py, cellSize, cellSize);
           
-          // 平地の場合のみ草のテクスチャを描画
-          if (terrain === "plain") {
-            const pattern = backgroundPattern[y]?.[x] || { color: "#7cb342", dots: [] };
-            ctx.fillStyle = "#689f38";
-            for (const dot of pattern.dots) {
-              ctx.fillRect(px + dot.x, py + dot.y, 1, 1);
-            }
+          // 草のテクスチャ（平地以外でも一部表示）
+          ctx.fillStyle = "#689f38";
+          for (const dot of pattern.dots) {
+            ctx.fillRect(px + dot.x, py + dot.y, 1, 1);
           }
           
-          // 地形のアイコンを描画（小さく）
-          ctx.fillStyle = "#000";
-          ctx.font = `${Math.floor(cellSize * 0.3)}px monospace`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          const iconX = px + cellSize / 2;
-          const iconY = py + cellSize / 2;
-          
-          switch (terrain) {
-            case "water":
-              ctx.fillText("~", iconX, iconY);
-              break;
-            case "rock":
-              ctx.fillText("■", iconX, iconY);
-              break;
-            case "tree":
-              ctx.fillText("♠", iconX, iconY);
-              break;
-            case "swamp":
-              ctx.fillText("≈", iconX, iconY);
-              break;
-            case "mountain":
-              ctx.fillText("▲", iconX, iconY);
-              break;
+          // 地形に応じた画像を描画
+          const terrainImage = getTerrainImage(terrain);
+          if (terrainImage) {
+            try {
+              // 画像が読み込まれている場合は描画
+              if (terrainImage.complete && terrainImage.naturalWidth > 0) {
+                ctx.drawImage(terrainImage, px, py, cellSize, cellSize);
+              }
+            } catch (error) {
+              // 画像読み込みエラー時はフォールバック
+              drawTerrainFallback(ctx, px, py, cellSize, terrain);
+            }
+          } else {
+            // 画像がない場合はフォールバック描画
+            drawTerrainFallback(ctx, px, py, cellSize, terrain);
           }
         }
       }
