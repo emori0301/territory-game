@@ -10,10 +10,9 @@ interface GameBoardProps {
 
 export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const backgroundPatternRef = useRef<Array<Array<{ color: string; dots: Array<{ x: number; y: number }> }>> | null>(null);
   
-  // 背景パターンを固定（初回のみ生成、Hydrationエラーを防ぐ）
-  if (!backgroundPatternRef.current) {
+  // 背景パターンを固定（useMemoで一度だけ生成、Hydrationエラーを防ぐ）
+  const backgroundPattern = useMemo(() => {
     const pattern: Array<Array<{ color: string; dots: Array<{ x: number; y: number }> }>> = [];
     const grassColor = "#7cb342"; // 全て同じ色
     
@@ -21,11 +20,12 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
       pattern[y] = [];
       for (let x = 0; x < 30; x++) {
         const dots: Array<{ x: number; y: number }> = [];
-        // 固定のドット位置
+        // 固定のドット位置（cellSizeに依存しない固定値を使用）
+        const fixedCellSize = 15; // 固定値を使用
         for (let i = 0; i < 3; i++) {
           dots.push({
-            x: ((x * 7 + y * 11 + i * 13) % cellSize),
-            y: ((x * 13 + y * 7 + i * 17) % cellSize),
+            x: ((x * 7 + y * 11 + i * 13) % fixedCellSize),
+            y: ((x * 13 + y * 7 + i * 17) % fixedCellSize),
           });
         }
         pattern[y]!.push({
@@ -34,10 +34,8 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
         });
       }
     }
-    backgroundPatternRef.current = pattern;
-  }
-  
-  const backgroundPattern = backgroundPatternRef.current;
+    return pattern;
+  }, []); // 依存配列を空にして、一度だけ生成
 
   useEffect(() => {
     if (!gameState || !canvasRef.current) return;
