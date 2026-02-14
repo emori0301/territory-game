@@ -220,8 +220,21 @@ export function executeTick(gameState: GameState): GameState {
     const unit = unitMap.get(unitId);
     if (!unit) continue;
 
-    const oldCell = newCells[unit.y]![unit.x]!;
-    const newCell = newCells[pos.y]![pos.x]!;
+    const oldCell = newCells[unit.y]?.[unit.x];
+    const newCell = newCells[pos.y]?.[pos.x];
+    
+    if (!oldCell || !newCell) continue;
+
+    // 地形を通れるかチェック
+    if (!canPassTerrain(newCell.terrain, unit.isHero)) continue;
+
+    // 地形によるvalue消費を計算
+    const terrainCost = getTerrainValueCost(newCell.terrain);
+    
+    // valueが足りない場合は移動しない
+    if (unit.value <= terrainCost && terrainCost > 0) {
+      continue;
+    }
 
     // 移動先が空いている場合のみ移動
     if (newCell.unitId === null || newCell.unitId === unitId) {
@@ -233,6 +246,11 @@ export function executeTick(gameState: GameState): GameState {
       unit.x = pos.x;
       unit.y = pos.y;
 
+      // 木を切った場合は地形を平地に変更
+      if (newCell.terrain === "tree" && terrainCost > 0) {
+        newCell.terrain = "plain";
+      }
+
       // 領地を塗る
       const { cells: paintedCells, valueConsumed } = paintTerritory(
         unit,
@@ -243,10 +261,12 @@ export function executeTick(gameState: GameState): GameState {
       );
       newCells[pos.y]![pos.x] = paintedCells[pos.y]![pos.x]!;
 
-      // 塗りをした場合のみvalueを1消費
+      // valueを消費（領地を塗る場合 + 地形コスト）
+      let totalCost = terrainCost;
       if (valueConsumed) {
-        unit.value -= 1;
+        totalCost += 1;
       }
+      unit.value -= totalCost;
     }
   }
 
