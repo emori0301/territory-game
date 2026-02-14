@@ -12,13 +12,47 @@ export default function Home() {
   const [gameId, setGameId] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   
-  // 設定
-  const [cellSize, setCellSize] = useState(20);
-  const [factionCount, setFactionCount] = useState(4);
-  const [musicVolume, setMusicVolume] = useState(50);
-  const [musicEnabled, setMusicEnabled] = useState(true);
+  // 設定（localStorageから読み込み）
+  const [cellSize, setCellSize] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("cellSize");
+      return saved ? Number(saved) : 20;
+    }
+    return 20;
+  });
+  const [factionCount, setFactionCount] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("factionCount");
+      return saved ? Number(saved) : 4;
+    }
+    return 4;
+  });
+  const [musicVolume, setMusicVolume] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("musicVolume");
+      return saved ? Number(saved) : 50;
+    }
+    return 50;
+  });
+  const [musicEnabled, setMusicEnabled] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("musicEnabled");
+      return saved ? saved === "true" : true;
+    }
+    return true;
+  });
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // 設定変更時にlocalStorageに保存
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cellSize", cellSize.toString());
+      localStorage.setItem("factionCount", factionCount.toString());
+      localStorage.setItem("musicVolume", musicVolume.toString());
+      localStorage.setItem("musicEnabled", musicEnabled.toString());
+    }
+  }, [cellSize, factionCount, musicVolume, musicEnabled]);
 
   const utils = trpc.useUtils();
   const createGame = trpc.game.create.useMutation({
@@ -62,16 +96,28 @@ export default function Home() {
 
   // 音楽の設定
   useEffect(() => {
-    if (musicEnabled && viewMode === "game") {
+    if (musicEnabled && viewMode === "game" && gameId) {
       if (!audioRef.current) {
         audioRef.current = new Audio("/music/rpg-bgm.mp3");
         audioRef.current.loop = true;
         audioRef.current.volume = musicVolume / 100;
+        
+        // エラーハンドリング
+        audioRef.current.addEventListener("error", (e) => {
+          console.warn("音楽ファイルの読み込みに失敗しました。音楽ファイルが存在しない可能性があります。");
+          console.warn("音楽ファイルを /public/music/rpg-bgm.mp3 に配置してください。");
+        });
       }
-      audioRef.current.volume = musicVolume / 100;
-      audioRef.current.play().catch((error) => {
-        console.error("Failed to play music:", error);
-      });
+      
+      if (audioRef.current) {
+        audioRef.current.volume = musicVolume / 100;
+        audioRef.current.play().catch((error) => {
+          // 音楽ファイルが存在しない場合はエラーを無視
+          if (error.name !== "NotAllowedError") {
+            console.warn("音楽の再生に失敗しました:", error);
+          }
+        });
+      }
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -83,7 +129,7 @@ export default function Home() {
         audioRef.current.pause();
       }
     };
-  }, [musicEnabled, musicVolume, viewMode]);
+  }, [musicEnabled, musicVolume, viewMode, gameId]);
 
   const handleCreateGame = async () => {
     try {
