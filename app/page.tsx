@@ -51,16 +51,34 @@ export default function Home() {
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
-  // 設定変更時にlocalStorageに保存
+  // 設定画面用の一時的なstate
+  const [tempCellSize, setTempCellSize] = useState(cellSize);
+  const [tempBoardSize, setTempBoardSize] = useState(boardSize);
+  const [tempFactionCount, setTempFactionCount] = useState(factionCount);
+  const [tempMusicVolume, setTempMusicVolume] = useState(musicVolume);
+  const [tempMusicEnabled, setTempMusicEnabled] = useState(musicEnabled);
+  
+  // 設定画面を開いたときに現在の設定値を一時的なstateにコピー
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (viewMode === "settings") {
+      setTempCellSize(cellSize);
+      setTempBoardSize(boardSize);
+      setTempFactionCount(factionCount);
+      setTempMusicVolume(musicVolume);
+      setTempMusicEnabled(musicEnabled);
+    }
+  }, [viewMode, cellSize, boardSize, factionCount, musicVolume, musicEnabled]);
+  
+  // 設定変更時にlocalStorageに保存（ゲーム画面でのみ）
+  useEffect(() => {
+    if (viewMode === "game" && typeof window !== "undefined") {
       localStorage.setItem("cellSize", cellSize.toString());
       localStorage.setItem("boardSize", boardSize.toString());
       localStorage.setItem("factionCount", factionCount.toString());
       localStorage.setItem("musicVolume", musicVolume.toString());
       localStorage.setItem("musicEnabled", musicEnabled.toString());
     }
-  }, [cellSize, boardSize, factionCount, musicVolume, musicEnabled]);
+  }, [viewMode, cellSize, boardSize, factionCount, musicVolume, musicEnabled]);
 
   const utils = trpc.useUtils();
   const createGame = trpc.game.create.useMutation({
@@ -273,12 +291,6 @@ export default function Home() {
 
   // 設定画面
   if (viewMode === "settings") {
-    const [tempCellSize, setTempCellSize] = useState(cellSize);
-    const [tempBoardSize, setTempBoardSize] = useState(boardSize);
-    const [tempFactionCount, setTempFactionCount] = useState(factionCount);
-    const [tempMusicVolume, setTempMusicVolume] = useState(musicVolume);
-    const [tempMusicEnabled, setTempMusicEnabled] = useState(musicEnabled);
-
     const handleApplySettings = () => {
       setCellSize(tempCellSize);
       setBoardSize(tempBoardSize);
