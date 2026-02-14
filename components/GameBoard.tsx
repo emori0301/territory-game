@@ -18,19 +18,19 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
     setIsMounted(true);
   }, []);
   
-  // 特性の日本語名を取得
-  const getTraitName = (trait: string): string => {
+  // 特性の日本語名と説明を取得
+  const getTraitInfo = (trait: string): { name: string; description: string } => {
     switch (trait) {
       case "painter":
-        return "塗り職人";
+        return { name: "塗り職人", description: "塗られていないマスを優先" };
       case "aggressive":
-        return "攻撃的";
+        return { name: "攻撃的", description: "周囲5マス以内の敵に向かう" };
       case "gatherer":
-        return "集結型";
+        return { name: "集結型", description: "味方と合流してから攻撃" };
       case "normal":
-        return "通常";
+        return { name: "通常", description: "バランス型の行動" };
       default:
-        return trait;
+        return { name: trait, description: "" };
     }
   };
   
@@ -221,16 +221,21 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
         <div
           className="absolute bg-black border-2 border-green-500 text-green-400 p-2 pointer-events-none z-10"
           style={{
-            left: `${hoveredUnit.x + 10}px`,
-            top: `${hoveredUnit.y - 10}px`,
-            transform: "translateY(-100%)",
+            left: `${Math.min(hoveredUnit.x + 10, window.innerWidth - 200)}px`,
+            top: `${Math.max(hoveredUnit.y - 10, 10)}px`,
+            transform: hoveredUnit.y < 100 ? "translateY(0)" : "translateY(-100%)",
             fontFamily: "Courier New, monospace",
             fontSize: "12px",
             boxShadow: "0 0 10px rgba(0, 255, 0, 0.5)",
-            whiteSpace: "nowrap",
+            maxWidth: "200px",
           }}
         >
-          <div className="font-bold text-green-500">特性: {getTraitName(hoveredUnit.unit.trait)}</div>
+          <div className="font-bold text-green-500">
+            特性: {getTraitInfo(hoveredUnit.unit.trait).name}
+          </div>
+          <div className="text-xs text-green-300 mb-1">
+            {getTraitInfo(hoveredUnit.unit.trait).description}
+          </div>
           <div>Value: {hoveredUnit.unit.value}</div>
           <div>Age: {hoveredUnit.unit.age}</div>
           {hoveredUnit.unit.isHero && <div className="text-yellow-400">★ 英雄</div>}
