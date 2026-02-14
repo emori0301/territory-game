@@ -20,6 +20,13 @@ export default function Home() {
     }
     return 20;
   });
+  const [boardSize, setBoardSize] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("boardSize");
+      return saved ? Number(saved) : 30;
+    }
+    return 30;
+  });
   const [factionCount, setFactionCount] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("factionCount");
