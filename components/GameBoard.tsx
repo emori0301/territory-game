@@ -110,11 +110,11 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
         canvas.height = size;
 
       // 固定された背景を描画
-      for (let y = 0; y < 30; y++) {
-        for (let x = 0; x < 30; x++) {
+      for (let y = 0; y < boardSize; y++) {
+        for (let x = 0; x < boardSize; x++) {
           const px = x * cellSize;
           const py = y * cellSize;
-          const pattern = backgroundPattern[y]![x]!;
+          const pattern = backgroundPattern[y]?.[x] || { color: "#7cb342", dots: [] };
           
           // 背景色
           ctx.fillStyle = pattern.color;
