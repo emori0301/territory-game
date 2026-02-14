@@ -164,6 +164,13 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
         // ドット絵風のコマを描画
         ctx.imageSmoothingEnabled = false; // ドット絵風にする
 
+        // 戦闘中のコマは赤い枠を描画
+        if (unit.inCombat) {
+          ctx.strokeStyle = "#ff0000";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(px + 1, py + 1, cellSize - 2, cellSize - 2);
+        }
+
         if (unit.isHero) {
           // 英雄：金色のドット絵キャラ
           drawPixelArtHero(ctx, centerX, centerY, unitSize, unit.factionId);
@@ -175,8 +182,8 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
           drawPixelArtFemale(ctx, centerX, centerY, unitSize, unit.factionId);
         }
 
-        // valueを表示（ドット絵風のフォント）
-        ctx.fillStyle = "#fff";
+        // valueを表示（ドット絵風のフォント、戦闘中は赤色）
+        ctx.fillStyle = unit.inCombat ? "#ff0000" : "#fff";
         ctx.strokeStyle = "#000";
         ctx.lineWidth = 2;
         ctx.font = `bold ${Math.floor(cellSize * 0.4)}px monospace`;

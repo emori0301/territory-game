@@ -1,13 +1,9 @@
 // Tick処理（ゲームの1ターン）
 
 import {
-  DECAY_THRESHOLD,
   HERO_BIRTH_PROBABILITY,
   HERO_BIRTH_THRESHOLD,
-  HERO_MAX_AGE,
-  MAX_AGE,
   MAX_TICKS,
-  MOVE_VALUE_CONSUMPTION_PROBABILITY,
 } from "./constants";
 import {
   detectCollisions,
@@ -96,7 +92,7 @@ function checkHeroBirth(gameState: GameState): Unit[] {
         const targetUnit = factionUnits[targetIndex]!;
         const unitIndex = units.findIndex((u) => u.id === targetUnit.id);
         if (unitIndex !== -1) {
-          units[unitIndex] = { ...targetUnit, isHero: true, trait: targetUnit.trait };
+          units[unitIndex] = { ...targetUnit, isHero: true, trait: targetUnit.trait, inCombat: false };
         }
       }
     }
