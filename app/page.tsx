@@ -202,7 +202,7 @@ export default function Home() {
           </div>
         )}
 
-        <GameBoard gameState={gameState} cellSize={20} />
+        <GameBoard gameState={gameState} cellSize={20} suppressHydrationWarning />
 
         {gameState && (
           <div className="mt-4 text-sm text-gray-400 text-center">

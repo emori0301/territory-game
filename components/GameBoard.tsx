@@ -19,8 +19,6 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   
   // 背景パターンを固定（useMemoで一度だけ生成、Hydrationエラーを防ぐ）
   const backgroundPattern = useMemo(() => {
-    if (!isMounted) return [];
-    
     const pattern: Array<Array<{ color: string; dots: Array<{ x: number; y: number }> }>> = [];
     const grassColor = "#7cb342"; // 全て同じ色
     
@@ -43,10 +41,10 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
       }
     }
     return pattern;
-  }, [isMounted]); // isMountedに依存
+  }, []); // 依存配列を空にして、一度だけ生成
 
   useEffect(() => {
-    if (!gameState || !canvasRef.current || !isMounted) return;
+    if (!gameState || !canvasRef.current || !isMounted || backgroundPattern.length === 0) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -153,19 +151,9 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
     }
   }, [gameState, cellSize, backgroundPattern, isMounted]);
 
+  // サーバー側では何もレンダリングしない（Hydrationエラーを防ぐ）
   if (!isMounted) {
-    return (
-      <div className="flex justify-center">
-        <div className="border-4 border-green-500 shadow-2xl" style={{ 
-          width: cellSize * 30,
-          height: cellSize * 30,
-          imageRendering: "pixelated",
-          imageRendering: "-moz-crisp-edges",
-          imageRendering: "crisp-edges",
-          boxShadow: "0 0 20px rgba(0, 255, 0, 0.5)"
-        }} />
-      </div>
-    );
+    return null;
   }
 
   return (
