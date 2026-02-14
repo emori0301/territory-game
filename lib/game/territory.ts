@@ -117,8 +117,8 @@ export function spawnUnitsFromTerritory(
             sex,
             value: randomInt(10, 15), // 10-15のランダムなvalue
             isHero: false,
-            age: 0,
             trait: getRandomTrait(sex),
+            inCombat: false,
           };
 
           newUnits.push(newUnit);

@@ -202,10 +202,14 @@ function getStrategicDirection(
 
 /**
  * 全コマの移動意図を生成（より戦略的に）
+ * 戦闘中のコマは移動しない
  */
 export function generateMoveIntents(gameState: GameState): MoveIntent[] {
   const intents: MoveIntent[] = [];
   for (const unit of gameState.units) {
+    // 戦闘中のコマは移動しない
+    if (unit.inCombat) continue;
+    
     const direction = getStrategicDirection(unit, gameState);
     intents.push({
       unitId: unit.id,

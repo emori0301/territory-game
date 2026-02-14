@@ -123,12 +123,6 @@ function processDeaths(units: Unit[], cells: Cell[][]): {
       shouldDie = true;
     }
 
-    // age >= 100（英雄は50）
-    const maxAge = unit.isHero ? HERO_MAX_AGE : MAX_AGE;
-    if (unit.age >= maxAge) {
-      shouldDie = true;
-    }
-
     if (shouldDie) {
       // コマを削除
       if (newCells[unit.y]?.[unit.x]) {
@@ -260,10 +254,7 @@ export function executeTick(gameState: GameState): GameState {
     }
   }
 
-  // 6. ageを増加
-  units = units.map((u) => ({ ...u, age: u.age + 1 }));
-
-  // 7. 自然減衰は削除（塗りをした時のみvalueを消費）
+  // 6. 自然減衰は削除（塗りをした時のみvalueを消費）
 
   // 8. 英雄誕生判定
   units = checkHeroBirth({ ...gameState, units, cells: newCells });

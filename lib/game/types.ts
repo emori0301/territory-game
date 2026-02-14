@@ -11,8 +11,8 @@ export interface Unit {
   sex: Sex;
   value: number;
   isHero: boolean;
-  age: number;
   trait: UnitTrait; // コマの特性
+  inCombat: boolean; // 戦闘中フラグ
 }
 
 export interface Cell {

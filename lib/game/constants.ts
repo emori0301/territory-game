@@ -6,8 +6,6 @@ export const INITIAL_UNIT_VALUE = 15; // 10から15に増加（ライフ減少�
 export const MOVE_DISTANCE = 1; // 1マス移動
 export const MAX_TICKS = 500;
 export const MAX_UNITS = 300;
-export const MAX_AGE = 150; // 100から150に増加（より長生きに）
-export const HERO_MAX_AGE = 75; // 50から75に増加
 export const HERO_BIRTH_THRESHOLD = 0.2; // 20%
 export const HERO_BIRTH_PROBABILITY = 0.1; // 10%
 

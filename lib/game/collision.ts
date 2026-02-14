@@ -20,8 +20,8 @@ function handleMaleMaleCollision(
     sex: "male",
     value: mergedValue,
     isHero: unitA.isHero || unitB.isHero,
-    age: Math.min(unitA.age, unitB.age),
     trait: unitA.trait, // 統合時はunitAの特性を継承
+    inCombat: false,
   };
 
   // unitBを削除し、unitAを統合
@@ -67,8 +67,8 @@ function handleMaleFemaleCollision(
     sex: childSex,
     value: childValue,
     isHero: false,
-    age: 0,
     trait: getRandomTrait(childSex),
+    inCombat: false,
   };
 
   // 親のvalueを-2
@@ -111,59 +111,110 @@ function handleFemaleFemaleCollision(
 
 /**
  * 敵勢力衝突（戦闘）
- * 差分の数字を減らす（いきなり死なない）
+ * 毎tick戦闘して、どちらかが死ぬまで続ける
  */
 function handleEnemyCollision(
   unitA: Unit,
   unitB: Unit,
   gameState: GameState,
 ): { units: Unit[]; cells: Cell[][] } {
-  const valueDiff = Math.abs(unitA.value - unitB.value);
+  // 戦闘ダメージ（valueの10%または最小1）
+  const damageA = Math.max(1, Math.floor(unitB.value * 0.1));
+  const damageB = Math.max(1, Math.floor(unitA.value * 0.1));
   
-  // 値が大きい方が勝者
-  const winner = unitA.value > unitB.value ? unitA : unitB;
-  const loser = winner.id === unitA.id ? unitB : unitA;
-
-  // 敗者のvalueを差分だけ減らす
-  const newLoserValue = loser.value - valueDiff;
-
   const newCells = gameState.cells.map((row) => row.map((cell) => ({ ...cell })));
-
-  // 衝突位置のcellをクリア
-  if (newCells[winner.y]?.[winner.x]) {
-    newCells[winner.y]![winner.x]!.unitId = null;
-  }
+  const combatPosition = { x: unitA.x, y: unitA.y };
 
   const newUnits = gameState.units.map((u) => {
-    if (u.id === winner.id) {
-      // 勝者はvalueを増やす（敗者のvalueの一部を獲得）
-      const valueGain = Math.min(loser.value, 3); // 最大3まで獲得
-      const updatedWinner = { ...u, value: u.value + valueGain, x: winner.x, y: winner.y };
-      // 勝者の位置をcellsに反映
-      if (newCells[updatedWinner.y]?.[updatedWinner.x]) {
-        newCells[updatedWinner.y]![updatedWinner.x]!.unitId = updatedWinner.id;
-      }
-      return updatedWinner;
-    }
-    if (u.id === loser.id) {
-      // 敗者は差分だけvalueを減らす
-      if (newLoserValue <= 0) {
-        // valueが0以下になった場合は削除
-        // cellからも削除（既にクリア済み）
+    if (u.id === unitA.id) {
+      const newValue = unitA.value - damageA;
+      if (newValue <= 0) {
+        // unitAが死亡
+        if (newCells[combatPosition.y]?.[combatPosition.x]) {
+          newCells[combatPosition.y]![combatPosition.x]!.unitId = null;
+        }
         return null;
       }
-      // 敗者は同じ位置に残る（valueが減るだけ）
-      const updatedLoser = { ...u, value: newLoserValue, x: loser.x, y: loser.y };
-      // 敗者の位置をcellsに反映
-      if (newCells[updatedLoser.y]?.[updatedLoser.x]) {
-        newCells[updatedLoser.y]![updatedLoser.x]!.unitId = updatedLoser.id;
+      // unitAは戦闘継続（移動できない）
+      const updatedUnit = { 
+        ...u, 
+        value: newValue, 
+        x: combatPosition.x, 
+        y: combatPosition.y,
+        inCombat: true,
+      };
+      if (newCells[updatedUnit.y]?.[updatedUnit.x]) {
+        newCells[updatedUnit.y]![updatedUnit.x]!.unitId = updatedUnit.id;
       }
-      return updatedLoser;
+      return updatedUnit;
     }
-    return u;
+    if (u.id === unitB.id) {
+      const newValue = unitB.value - damageB;
+      if (newValue <= 0) {
+        // unitBが死亡
+        if (newCells[combatPosition.y]?.[combatPosition.x]) {
+          newCells[combatPosition.y]![combatPosition.x]!.unitId = null;
+        }
+        return null;
+      }
+      // unitBは戦闘継続（移動できない）
+      const updatedUnit = { 
+        ...u, 
+        value: newValue, 
+        x: combatPosition.x, 
+        y: combatPosition.y,
+        inCombat: true,
+      };
+      if (newCells[updatedUnit.y]?.[updatedUnit.x]) {
+        newCells[updatedUnit.y]![updatedUnit.x]!.unitId = updatedUnit.id;
+      }
+      return updatedUnit;
+    }
+    // 他のコマは戦闘フラグをクリア（移動可能）
+    return { ...u, inCombat: false };
   }).filter((u): u is Unit => u !== null);
 
   return { units: newUnits, cells: newCells };
+}
+
+/**
+ * 同じ位置にいる敵同士を検出（継続戦闘用）
+ */
+function detectOngoingCombat(gameState: GameState): Map<string, string[]> {
+  const combatMap = new Map<string, string[]>();
+  
+  // 各マスで敵同士がいるかチェック
+  for (let y = 0; y < gameState.cells.length; y++) {
+    for (let x = 0; x < gameState.cells[y]!.length; x++) {
+      const cell = gameState.cells[y]![x];
+      if (!cell || !cell.unitId) continue;
+      
+      // このマスにいる全てのコマを検索
+      const unitsAtPosition = gameState.units.filter((u) => u.x === x && u.y === y);
+      
+      if (unitsAtPosition.length >= 2) {
+        // 敵同士がいるかチェック
+        for (let i = 0; i < unitsAtPosition.length; i++) {
+          for (let j = i + 1; j < unitsAtPosition.length; j++) {
+            const unitA = unitsAtPosition[i]!;
+            const unitB = unitsAtPosition[j]!;
+            
+            if (unitA.factionId !== unitB.factionId) {
+              const key = `${x},${y}`;
+              if (!combatMap.has(key)) {
+                combatMap.set(key, []);
+              }
+              const unitIds = combatMap.get(key)!;
+              if (!unitIds.includes(unitA.id)) unitIds.push(unitA.id);
+              if (!unitIds.includes(unitB.id)) unitIds.push(unitB.id);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return combatMap;
 }
 
 /**
@@ -176,9 +227,39 @@ export function resolveCollisions(
   let units = [...gameState.units];
   const cells = gameState.cells.map((row) => row.map((cell) => ({ ...cell })));
 
-  // 衝突を解決（敵勢力衝突を優先）
+  // 継続戦闘を検出（同じ位置にいる敵同士）
+  const ongoingCombat = detectOngoingCombat({ ...gameState, units, cells });
+  
+  // 継続戦闘を処理
   const processedUnits = new Set<string>();
+  
+  for (const [key, unitIds] of ongoingCombat.entries()) {
+    if (unitIds.length < 2) continue;
+    
+    // 最初の2体のみ処理（複数敵がいる場合は最初の2体が戦闘）
+    const [idA, idB] = unitIds.slice(0, 2);
+    if (processedUnits.has(idA) || processedUnits.has(idB)) continue;
+    
+    const unitA = units.find((u) => u.id === idA);
+    const unitB = units.find((u) => u.id === idB);
+    if (!unitA || !unitB) continue;
+    
+    // 敵勢力衝突を処理
+    if (unitA.factionId !== unitB.factionId) {
+      const result = handleEnemyCollision(unitA, unitB, { ...gameState, units, cells });
+      units = result.units;
+      // cellsを更新
+      for (let y = 0; y < cells.length; y++) {
+        for (let x = 0; x < cells[y]!.length; x++) {
+          cells[y]![x] = result.cells[y]![x]!;
+        }
+      }
+      processedUnits.add(idA);
+      processedUnits.add(idB);
+    }
+  }
 
+  // 新しい衝突を解決（敵勢力衝突を優先）
   for (const [key, unitIds] of collisions.entries()) {
     if (unitIds.length !== 2) continue; // 2体の衝突のみ処理
 

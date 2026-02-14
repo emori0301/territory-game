@@ -57,8 +57,8 @@ export function placeInitialUnits(
           sex,
           value: INITIAL_UNIT_VALUE,
           isHero: false,
-          age: 0,
           trait: getRandomTrait(sex),
+          inCombat: false,
         };
         units.push(unit);
         cells[y]![x]!.unitId = unit.id;
