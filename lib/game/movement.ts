@@ -1,5 +1,6 @@
 // 移動処理
 
+import { MOVE_DISTANCE } from "./constants";
 import { getNextPosition, getRandomDirection } from "./utils";
 import type { Cell, GameState, MoveIntent, Unit } from "./types";
 
@@ -36,13 +37,8 @@ export function resolveMoveIntents(
     const unit = unitMap.get(intent.unitId);
     if (!unit) continue;
 
-    const nextPos = getNextPosition(unit.x, unit.y, intent.direction);
-    if (nextPos) {
-      moveResults.set(intent.unitId, nextPos);
-    } else {
-      // 盤外の場合はその場に留まる
-      moveResults.set(intent.unitId, { x: unit.x, y: unit.y });
-    }
+    const nextPos = getNextPosition(unit.x, unit.y, intent.direction, MOVE_DISTANCE);
+    moveResults.set(intent.unitId, nextPos);
   }
 
   return moveResults;

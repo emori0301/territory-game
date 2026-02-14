@@ -7,6 +7,7 @@ import {
   HERO_MAX_AGE,
   MAX_AGE,
   MAX_TICKS,
+  MOVE_VALUE_CONSUMPTION_PROBABILITY,
 } from "./constants";
 import {
   detectCollisions,
@@ -15,6 +16,7 @@ import {
 } from "./movement";
 import { resolveCollisions } from "./collision";
 import { getSurroundingCells } from "./utils";
+import { spawnUnitsFromTerritory } from "./territory";
 import type { Cell, GameState, Unit } from "./types";
 
 /**
@@ -201,9 +203,14 @@ export function checkWinCondition(gameState: GameState): {
  * 1tickを実行
  */
 export function executeTick(gameState: GameState): GameState {
-  if (gameState.status === "finished") {
-    return gameState;
-  }
+  try {
+    if (gameState.status === "finished") {
+      return gameState;
+    }
+
+    if (!gameState.units || !gameState.cells || !gameState.factions) {
+      throw new Error("Invalid game state structure");
+    }
 
   // 1. 移動意図を生成
   const moveIntents = generateMoveIntents(gameState);
@@ -252,7 +259,8 @@ export function executeTick(gameState: GameState): GameState {
       );
       newCells[pos.y]![pos.x] = paintedCells[pos.y]![pos.x]!;
 
-      if (valueConsumed) {
+      // 移動時のvalue消費を確率的に減らす（50%の確率で消費しない）
+      if (valueConsumed && Math.random() < MOVE_VALUE_CONSUMPTION_PROBABILITY) {
         unit.value -= 1;
       }
     }
@@ -267,13 +275,29 @@ export function executeTick(gameState: GameState): GameState {
   // 8. 英雄誕生判定
   units = checkHeroBirth({ ...gameState, units, cells: newCells });
 
-  // 9. 死亡処理
+  // 9. 領地からのコマ生成（3×3以上の領地から）
+  let spawnedUnits = units;
+  let spawnedCells = newCells;
+  try {
+    const result = spawnUnitsFromTerritory({
+      ...gameState,
+      units,
+      cells: newCells,
+    });
+    spawnedUnits = result.units;
+    spawnedCells = result.cells;
+  } catch (error) {
+    console.error("Error spawning units from territory:", error);
+    // エラーが発生してもゲームを続行
+  }
+
+  // 10. 死亡処理
   const { units: survivedUnits, cells: finalCells } = processDeaths(
-    units,
-    newCells,
+    spawnedUnits,
+    spawnedCells,
   );
 
-  // 10. 勝利条件をチェック
+  // 11. 勝利条件をチェック
   const newTick = gameState.tick + 1;
   const { status, winnerId } = checkWinCondition({
     ...gameState,

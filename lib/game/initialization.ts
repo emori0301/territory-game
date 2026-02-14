@@ -25,8 +25,9 @@ export function createEmptyBoard(): Cell[][] {
 
 /**
  * 初期コマを配置
- * 勢力A: 左上エリア (0-14, 0-14)
- * 勢力B: 右下エリア (15-29, 15-29)
+ * 勢力A: 左側中央エリア (0-12, 10-20) - より中央寄りに配置
+ * 勢力B: 右側中央エリア (17-29, 10-20) - より中央寄りに配置
+ * これにより、初期から接触しやすくなる
  */
 export function placeInitialUnits(
   cells: Cell[][],
@@ -36,12 +37,12 @@ export function placeInitialUnits(
   const units: Unit[] = [];
   let unitIdCounter = 0;
 
-  // 勢力A（左上）
+  // 勢力A（左側中央）
   for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
     let placed = false;
     while (!placed) {
-      const x = randomInt(0, 14);
-      const y = randomInt(0, 14);
+      const x = randomInt(0, 12);
+      const y = randomInt(10, 20);
       if (cells[y]![x]!.unitId === null) {
         const unit: Unit = {
           id: `unit-${unitIdCounter++}`,
@@ -60,12 +61,12 @@ export function placeInitialUnits(
     }
   }
 
-  // 勢力B（右下）
+  // 勢力B（右側中央）
   for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
     let placed = false;
     while (!placed) {
-      const x = randomInt(15, 29);
-      const y = randomInt(15, 29);
+      const x = randomInt(17, 29);
+      const y = randomInt(10, 20);
       if (cells[y]![x]!.unitId === null) {
         const unit: Unit = {
           id: `unit-${unitIdCounter++}`,

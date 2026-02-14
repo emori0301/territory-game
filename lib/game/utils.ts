@@ -24,35 +24,57 @@ export function getRandomDirection(): "up" | "down" | "left" | "right" {
 }
 
 /**
- * 方向に基づいて次の座標を計算
+ * 方向に基づいて次の座標を計算（複数マス移動可能）
  */
 export function getNextPosition(
   x: number,
   y: number,
   direction: "up" | "down" | "left" | "right",
-): { x: number; y: number } | null {
+  distance: number = 2, // デフォルトで2マス移動
+): { x: number; y: number } {
   let nextX = x;
   let nextY = y;
 
   switch (direction) {
     case "up":
-      nextY -= 1;
+      nextY -= distance;
       break;
     case "down":
-      nextY += 1;
+      nextY += distance;
       break;
     case "left":
-      nextX -= 1;
+      nextX -= distance;
       break;
     case "right":
-      nextX += 1;
+      nextX += distance;
       break;
   }
 
   if (isValidPosition(nextX, nextY)) {
     return { x: nextX, y: nextY };
   }
-  return null;
+  // 盤外の場合は1マス移動を試す（再帰を避ける）
+  if (distance > 1) {
+    switch (direction) {
+      case "up":
+        nextY = y - 1;
+        break;
+      case "down":
+        nextY = y + 1;
+        break;
+      case "left":
+        nextX = x - 1;
+        break;
+      case "right":
+        nextX = x + 1;
+        break;
+    }
+    if (isValidPosition(nextX, nextY)) {
+      return { x: nextX, y: nextY };
+    }
+  }
+  // それでも盤外の場合はその場に留まる
+  return { x, y };
 }
 
 /**
@@ -72,8 +94,8 @@ export function getAdjacentEmptyCells(
   const emptyCells: Array<{ x: number; y: number }> = [];
 
   for (const dir of directions) {
-    const next = getNextPosition(x, y, dir);
-    if (next && cells[next.y]?.[next.x]?.unitId === null) {
+    const next = getNextPosition(x, y, dir, 1); // 隣接は1マス
+    if (cells[next.y]?.[next.x]?.unitId === null) {
       emptyCells.push(next);
     }
   }
@@ -97,10 +119,8 @@ export function getSurroundingCells(
   ];
 
   for (const dir of directions) {
-    const next = getNextPosition(x, y, dir);
-    if (next) {
-      cells.push(next);
-    }
+    const next = getNextPosition(x, y, dir, 1); // 周囲は1マス
+    cells.push(next);
   }
 
   return cells;

@@ -1,5 +1,4 @@
 import { initTRPC } from '@trpc/server';
-import superjson from 'superjson';
 import { ZodError } from 'zod';
 
 export const createTRPCContext = async () => {
@@ -7,7 +6,7 @@ export const createTRPCContext = async () => {
 };
 
 const t = initTRPC.context<typeof createTRPCContext>().create({
-  transformer: superjson,
+  // transformer: superjson, // 一時的に無効化（2次元配列の問題を回避）
   errorFormatter({ shape, error }) {
     return {
       ...shape,
