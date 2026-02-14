@@ -217,11 +217,11 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       />
-      {hoveredUnit && (
+      {hoveredUnit && isMounted && (
         <div
           className="absolute bg-black border-2 border-green-500 text-green-400 p-2 pointer-events-none z-10"
           style={{
-            left: `${Math.min(hoveredUnit.x + 10, window.innerWidth - 200)}px`,
+            left: `${Math.min(hoveredUnit.x + 10, typeof window !== 'undefined' ? window.innerWidth - 200 : hoveredUnit.x + 10)}px`,
             top: `${Math.max(hoveredUnit.y - 10, 10)}px`,
             transform: hoveredUnit.y < 100 ? "translateY(0)" : "translateY(-100%)",
             fontFamily: "Courier New, monospace",
