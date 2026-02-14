@@ -151,8 +151,13 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
     <div className="flex justify-center">
       <canvas
         ref={canvasRef}
-        className="border-4 border-gray-800 rounded shadow-2xl"
-        style={{ imageRendering: "pixelated" }}
+        className="border-4 border-green-500 shadow-2xl"
+        style={{ 
+          imageRendering: "pixelated",
+          imageRendering: "-moz-crisp-edges",
+          imageRendering: "crisp-edges",
+          boxShadow: "0 0 20px rgba(0, 255, 0, 0.5)"
+        }}
       />
     </div>
   );
