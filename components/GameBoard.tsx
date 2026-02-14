@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import type { GameState } from "@/lib/game/types";
 
 interface GameBoardProps {
@@ -10,9 +10,17 @@ interface GameBoardProps {
 
 export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // クライアント側でのみマウントされるようにする
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // 背景パターンを固定（useMemoで一度だけ生成、Hydrationエラーを防ぐ）
   const backgroundPattern = useMemo(() => {
+    if (!isMounted) return [];
+    
     const pattern: Array<Array<{ color: string; dots: Array<{ x: number; y: number }> }>> = [];
     const grassColor = "#7cb342"; // 全て同じ色
     
@@ -35,10 +43,10 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
       }
     }
     return pattern;
-  }, []); // 依存配列を空にして、一度だけ生成
+  }, [isMounted]); // isMountedに依存
 
   useEffect(() => {
-    if (!gameState || !canvasRef.current) return;
+    if (!gameState || !canvasRef.current || !isMounted) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
