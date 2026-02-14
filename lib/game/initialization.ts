@@ -82,7 +82,6 @@ export function placeInitialUnits(
           sex: getRandomSex(),
           value: INITIAL_UNIT_VALUE,
           isHero: false,
-          age: 0,
           trait: getRandomTrait(),
         };
         units.push(unit);
@@ -107,7 +106,6 @@ export function placeInitialUnits(
           sex: getRandomSex(),
           value: INITIAL_UNIT_VALUE,
           isHero: false,
-          age: 0,
           trait: getRandomTrait(),
         };
         units.push(unit);
@@ -132,7 +130,6 @@ export function placeInitialUnits(
           sex: getRandomSex(),
           value: INITIAL_UNIT_VALUE,
           isHero: false,
-          age: 0,
           trait: getRandomTrait(),
         };
         units.push(unit);
