@@ -24,15 +24,19 @@ export function getRandomDirection(): "up" | "down" | "left" | "right" {
 }
 
 /**
- * ランダムな特性を取得
+ * ランダムな特性を取得（性別を考慮）
  */
-export function getRandomTrait(): "painter" | "aggressive" | "gatherer" | "normal" {
-  const traits: Array<"painter" | "aggressive" | "gatherer" | "normal"> = [
-    "painter",
-    "aggressive",
-    "gatherer",
-    "normal",
-  ];
+export function getRandomTrait(sex?: "male" | "female"): "painter" | "aggressive" | "gatherer" | "normal" {
+  let traits: Array<"painter" | "aggressive" | "gatherer" | "normal">;
+  
+  if (sex === "female") {
+    // 雌は攻撃特性（aggressive）を除外
+    traits = ["painter", "gatherer", "normal"];
+  } else {
+    // 雄は全ての特性から選択
+    traits = ["painter", "aggressive", "gatherer", "normal"];
+  }
+  
   return traits[Math.floor(Math.random() * traits.length)]!;
 }
 

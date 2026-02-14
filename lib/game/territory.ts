@@ -108,16 +108,17 @@ export function spawnUnitsFromTerritory(
             emptyCells[Math.floor(Math.random() * emptyCells.length)]!;
 
           // 新しいコマを生成
+          const sex = getRandomSex();
           const newUnit: Unit = {
             id: `unit-${Date.now()}-${Math.random()}`,
             factionId: faction.id,
             x: spawnCell.x,
             y: spawnCell.y,
-            sex: getRandomSex(),
+            sex,
             value: randomInt(10, 15), // 10-15のランダムなvalue
             isHero: false,
             age: 0,
-            trait: getRandomTrait(),
+            trait: getRandomTrait(sex),
           };
 
           newUnits.push(newUnit);

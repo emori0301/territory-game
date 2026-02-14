@@ -236,6 +236,7 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
           <div className="text-xs text-green-300 mb-1">
             {getTraitInfo(hoveredUnit.unit.trait).description}
           </div>
+          <div>性別: {hoveredUnit.unit.sex === "male" ? "雄" : "雌"}</div>
           <div>Value: {hoveredUnit.unit.value}</div>
           <div>Age: {hoveredUnit.unit.age}</div>
           {hoveredUnit.unit.isHero && <div className="text-yellow-400">★ 英雄</div>}

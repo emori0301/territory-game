@@ -58,16 +58,17 @@ function handleMaleFemaleCollision(
 
   // 子供を生成
   const childValue = Math.floor((male.value + female.value) / 2);
+  const childSex = getRandomSex();
   const newUnit: Unit = {
     id: `unit-${Date.now()}-${Math.random()}`,
     factionId: male.factionId,
     x: birthCell.x,
     y: birthCell.y,
-    sex: getRandomSex(),
+    sex: childSex,
     value: childValue,
     isHero: false,
     age: 0,
-    trait: getRandomTrait(),
+    trait: getRandomTrait(childSex),
   };
 
   // 親のvalueを-2

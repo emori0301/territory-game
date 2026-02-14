@@ -48,16 +48,17 @@ export function placeInitialUnits(
       const x = randomInt(0, 9);
       const y = randomInt(0, 9);
       if (cells[y]![x]!.unitId === null) {
+        const sex = getRandomSex();
         const unit: Unit = {
           id: `unit-${unitIdCounter++}`,
           factionId: factionA.id,
           x,
           y,
-          sex: getRandomSex(),
+          sex,
           value: INITIAL_UNIT_VALUE,
           isHero: false,
           age: 0,
-          trait: getRandomTrait(),
+          trait: getRandomTrait(sex),
         };
         units.push(unit);
         cells[y]![x]!.unitId = unit.id;
