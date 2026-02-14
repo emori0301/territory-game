@@ -66,6 +66,7 @@ function handleMaleFemaleCollision(
     value: childValue,
     isHero: false,
     age: 0,
+    trait: getRandomTrait(),
   };
 
   // 親のvalueを-2
