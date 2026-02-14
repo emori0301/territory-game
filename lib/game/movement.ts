@@ -1,6 +1,6 @@
 // 移動処理
 
-import { MOVE_DISTANCE, ENEMY_DETECTION_RANGE, GATHERER_MIN_VALUE } from "./constants";
+import { MOVE_DISTANCE, ENEMY_DETECTION_RANGE } from "./constants";
 import { getNextPosition, getRandomDirection, isValidPosition } from "./utils";
 import type { GameState, MoveIntent, Unit } from "./types";
 
@@ -82,70 +82,122 @@ function getStrategicDirection(
         break;
       }
 
-      case "gatherer": {
-        // 集結型: 周囲の味方と合流し、一定のvalueになったら攻撃
-        const nearbyValue = getNearbyAlliesValue(unit, gameState, 2);
-        const totalValue = unit.value + nearbyValue;
+      case "berserker": {
+        // 狂戦士: valueが低いほど積極的に敵に向かう（カオス）
+        // valueが低いほど遠くの敵も攻撃対象にする
+        const detectionRange = unit.value < 5 ? 15 : unit.value < 10 ? 10 : ENEMY_DETECTION_RANGE;
+        
+        let nearestEnemy: Unit | null = null;
+        let minDistance = Infinity;
 
-        if (totalValue >= GATHERER_MIN_VALUE) {
-          // 十分なvalueがある場合は敵を探す
-          let nearestEnemy: Unit | null = null;
-          let minDistance = Infinity;
+        for (const otherUnit of gameState.units) {
+          if (otherUnit.factionId === unit.factionId) continue;
 
-          for (const otherUnit of gameState.units) {
-            if (otherUnit.factionId === unit.factionId) continue;
-            const distance = manhattanDistance(
-              unit.x,
-              unit.y,
-              otherUnit.x,
-              otherUnit.y,
-            );
-            if (distance < minDistance) {
-              minDistance = distance;
-              nearestEnemy = otherUnit;
-            }
+          const distance = manhattanDistance(
+            unit.x,
+            unit.y,
+            otherUnit.x,
+            otherUnit.y,
+          );
+          if (distance <= detectionRange && distance < minDistance) {
+            minDistance = distance;
+            nearestEnemy = otherUnit;
           }
+        }
 
-          if (nearestEnemy) {
-            const dx = nearestEnemy.x - unit.x;
-            const dy = nearestEnemy.y - unit.y;
+        if (nearestEnemy) {
+          const dx = nearestEnemy.x - unit.x;
+          const dy = nearestEnemy.y - unit.y;
+          if (Math.abs(dx) > Math.abs(dy)) {
+            return dx > 0 ? "right" : "left";
+          } else {
+            return dy > 0 ? "down" : "up";
+          }
+        }
+        // 敵がいない場合はランダムに動く（カオス）
+        return getRandomDirection();
+      }
+
+      case "wanderer": {
+        // 放浪者: 完全にランダムに動く（カオス）
+        return getRandomDirection();
+      }
+
+      case "kamikaze": {
+        // 特攻: valueが低いと敵に突進、valueが高いと逃げる（カオス）
+        let nearestEnemy: Unit | null = null;
+        let minDistance = Infinity;
+
+        for (const otherUnit of gameState.units) {
+          if (otherUnit.factionId === unit.factionId) continue;
+
+          const distance = manhattanDistance(
+            unit.x,
+            unit.y,
+            otherUnit.x,
+            otherUnit.y,
+          );
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestEnemy = otherUnit;
+          }
+        }
+
+        if (nearestEnemy) {
+          const dx = nearestEnemy.x - unit.x;
+          const dy = nearestEnemy.y - unit.y;
+          
+          if (unit.value < 8) {
+            // valueが低い: 敵に突進
             if (Math.abs(dx) > Math.abs(dy)) {
               return dx > 0 ? "right" : "left";
             } else {
               return dy > 0 ? "down" : "up";
             }
-          }
-        } else {
-          // 味方に近づく
-          let nearestAlly: Unit | null = null;
-          let minDistance = Infinity;
-
-          for (const otherUnit of gameState.units) {
-            if (otherUnit.factionId !== unit.factionId) continue;
-            if (otherUnit.id === unit.id) continue;
-            const distance = manhattanDistance(
-              unit.x,
-              unit.y,
-              otherUnit.x,
-              otherUnit.y,
-            );
-            if (distance < minDistance && distance > 0) {
-              minDistance = distance;
-              nearestAlly = otherUnit;
-            }
-          }
-
-          if (nearestAlly) {
-            const dx = nearestAlly.x - unit.x;
-            const dy = nearestAlly.y - unit.y;
+          } else {
+            // valueが高い: 敵から逃げる
             if (Math.abs(dx) > Math.abs(dy)) {
-              return dx > 0 ? "right" : "left";
+              return dx > 0 ? "left" : "right";
             } else {
-              return dy > 0 ? "down" : "up";
+              return dy > 0 ? "up" : "down";
             }
           }
         }
-        // フォールバック: 塗られていないマスを優先
+        // 敵がいない場合はランダム
+        return getRandomDirection();
+      }
+
+      case "scout": {
+        // 斥候: 遠くの敵を探して移動（カオス）
+        let farthestEnemy: Unit | null = null;
+        let maxDistance = 0;
+
+        for (const otherUnit of gameState.units) {
+          if (otherUnit.factionId === unit.factionId) continue;
+
+          const distance = manhattanDistance(
+            unit.x,
+            unit.y,
+            otherUnit.x,
+            otherUnit.y,
+          );
+          // 遠くの敵を優先（ただし盤面内）
+          if (distance > maxDistance && distance > 5) {
+            maxDistance = distance;
+            farthestEnemy = otherUnit;
+          }
+        }
+
+        if (farthestEnemy) {
+          const dx = farthestEnemy.x - unit.x;
+          const dy = farthestEnemy.y - unit.y;
+          if (Math.abs(dx) > Math.abs(dy)) {
+            return dx > 0 ? "right" : "left";
+          } else {
+            return dy > 0 ? "down" : "up";
+          }
+        }
+        // 遠くの敵がいない場合は塗られていないマスを優先
         break;
       }
 
@@ -164,7 +216,7 @@ function getStrategicDirection(
       }
     }
 
-    // 塗られていないマスを優先（painter、aggressive、gathererのフォールバック）
+    // 塗られていないマスを優先（painter、aggressive、scoutのフォールバック）
     const unpaintedDirections: Array<"up" | "down" | "left" | "right"> = [];
     const paintedDirections: Array<"up" | "down" | "left" | "right"> = [];
 

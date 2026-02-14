@@ -1,7 +1,7 @@
 // ゲームの型定義
 
 export type Sex = "male" | "female";
-export type UnitTrait = "painter" | "aggressive" | "gatherer" | "normal";
+export type UnitTrait = "painter" | "aggressive" | "berserker" | "wanderer" | "kamikaze" | "scout" | "normal";
 
 export interface Unit {
   id: string;

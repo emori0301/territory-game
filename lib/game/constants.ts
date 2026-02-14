@@ -17,5 +17,4 @@ export const MOVE_VALUE_CONSUMPTION_PROBABILITY = 0.5;
 
 // 特性関連の定数
 export const ENEMY_DETECTION_RANGE = 5; // 敵を検出する範囲（マンハッタン距離）
-export const GATHERER_MIN_VALUE = 30; // 集結コマが攻撃を開始する最小value
 

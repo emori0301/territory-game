@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useMemo, useState } from "react";
-import type { GameState } from "@/lib/game/types";
+import type { GameState, UnitTrait } from "@/lib/game/types";
 
 interface GameBoardProps {
   gameState: GameState | null;
@@ -19,14 +19,20 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   }, []);
   
   // 特性の日本語名と説明を取得
-  const getTraitInfo = (trait: string): { name: string; description: string } => {
+  const getTraitInfo = (trait: UnitTrait): { name: string; description: string } => {
     switch (trait) {
       case "painter":
         return { name: "塗り職人", description: "塗られていないマスを優先" };
       case "aggressive":
         return { name: "攻撃的", description: "周囲5マス以内の敵に向かう" };
-      case "gatherer":
-        return { name: "集結型", description: "味方と合流してから攻撃" };
+      case "berserker":
+        return { name: "狂戦士", description: "valueが低いほど遠くの敵も攻撃（カオス）" };
+      case "wanderer":
+        return { name: "放浪者", description: "完全にランダムに動く（カオス）" };
+      case "kamikaze":
+        return { name: "特攻", description: "valueが低いと突進、高いと逃走（カオス）" };
+      case "scout":
+        return { name: "斥候", description: "遠くの敵を探して移動（カオス）" };
       case "normal":
         return { name: "通常", description: "バランス型の行動" };
       default:
