@@ -106,7 +106,7 @@ export default function Home() {
             <button
               onClick={handleCreateGame}
               disabled={createGame.isPending}
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className="retro-button"
             >
               {createGame.isPending ? "作成中..." : "ゲーム開始"}
             </button>
@@ -116,14 +116,14 @@ export default function Home() {
                 <>
                   <button
                     onClick={handleStart}
-                    className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    className="retro-button"
                   >
                     開始
                   </button>
                   <button
                     onClick={handleStep}
                     disabled={executeTick.isPending || gameState?.status === "finished"}
-                    className="px-6 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50"
+                    className="retro-button"
                   >
                     {executeTick.isPending ? "実行中..." : "1ステップ実行"}
                   </button>
@@ -131,7 +131,7 @@ export default function Home() {
               ) : (
                 <button
                   onClick={handleStop}
-                  className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  className="retro-button"
                 >
                   停止
                 </button>
@@ -139,7 +139,7 @@ export default function Home() {
               <button
                 onClick={handleReset}
                 disabled={resetGame.isPending}
-                className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+                className="retro-button"
               >
                 {resetGame.isPending ? "リセット中..." : "リセット"}
               </button>
@@ -148,45 +148,45 @@ export default function Home() {
         </div>
 
         {gameState && (
-          <div className="mb-4 text-center">
-            <div className="flex gap-4 justify-center flex-wrap">
-              <div>
-                <span className="text-blue-400">勢力A（青）: </span>
+          <div className="mb-4 retro-panel">
+            <div className="flex gap-4 justify-center flex-wrap mb-4">
+              <div className="text-green-400">
+                <span className="text-green-500">勢力A（青）: </span>
                 <span className="font-bold">
                   {gameState.units.filter((u) => u.factionId === "faction-a")
                     .length}
                 </span>
                 体
               </div>
-              <div>
-                <span className="text-red-400">勢力B（赤）: </span>
+              <div className="text-green-400">
+                <span className="text-green-500">勢力B（赤）: </span>
                 <span className="font-bold">
                   {gameState.units.filter((u) => u.factionId === "faction-b")
                     .length}
                 </span>
                 体
               </div>
-              <div>
-                <span className="text-green-400">勢力C（緑）: </span>
+              <div className="text-green-400">
+                <span className="text-green-500">勢力C（緑）: </span>
                 <span className="font-bold">
                   {gameState.units.filter((u) => u.factionId === "faction-c")
                     .length}
                 </span>
                 体
               </div>
-              <div>
-                <span className="text-orange-400">勢力D（オレンジ）: </span>
+              <div className="text-green-400">
+                <span className="text-green-500">勢力D（オレンジ）: </span>
                 <span className="font-bold">
                   {gameState.units.filter((u) => u.factionId === "faction-d")
                     .length}
                 </span>
                 体
               </div>
-              <div>
+              <div className="text-green-400">
                 Tick: <span className="font-bold">{gameState.tick}</span> / 500
               </div>
               {gameState.status === "finished" && (
-                <div className="text-yellow-400 font-bold">
+                <div className="text-green-500 font-bold text-lg">
                   {gameState.winnerId === "faction-a"
                     ? "勢力A（青）の勝利！"
                     : gameState.winnerId === "faction-b"
