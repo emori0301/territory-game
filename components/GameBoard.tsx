@@ -36,7 +36,7 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   
   // マウス移動イベントハンドラー
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!gameState || !canvasRef.current) {
+    if (!gameState || !canvasRef.current || !isMounted) {
       setHoveredUnit(null);
       return;
     }
