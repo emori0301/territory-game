@@ -2,7 +2,7 @@
 
 import { BOARD_SIZE, INITIAL_UNITS_PER_FACTION, INITIAL_UNIT_VALUE } from "./constants";
 import { getRandomSex, getRandomTrait, isValidPosition, randomInt } from "./utils";
-import type { Cell, Faction, GameState, Unit } from "./types";
+import type { Cell, Faction, GameState, Unit, TerrainType } from "./types";
 
 /**
  * ランダムな地形を生成（水は固まって出現）
