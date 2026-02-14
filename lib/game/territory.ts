@@ -10,11 +10,11 @@ import type { Cell, GameState, Unit } from "./types";
 export function findTerritoryClusters(
   cells: Cell[][],
   factionId: string,
+  boardSize: number = BOARD_SIZE,
 ): Array<Array<{ x: number; y: number }>> {
   const visited = new Set<string>();
   const clusters: Array<Array<{ x: number; y: number }>> = [];
 
-  const boardSize = gameState.boardSize || BOARD_SIZE;
   for (let y = 0; y < boardSize; y++) {
     for (let x = 0; x < boardSize; x++) {
       const key = `${x},${y}`;
@@ -54,9 +54,9 @@ export function findTerritoryClusters(
 
           if (
             nextX >= 0 &&
-            nextX < BOARD_SIZE &&
+            nextX < boardSize &&
             nextY >= 0 &&
-            nextY < BOARD_SIZE &&
+            nextY < boardSize &&
             !visited.has(nextKey)
           ) {
             const nextCell = cells[nextY]?.[nextX];
@@ -83,12 +83,13 @@ export function findTerritoryClusters(
 export function spawnUnitsFromTerritory(
   gameState: GameState,
 ): { units: Unit[]; cells: Cell[][] } {
+  const boardSize = gameState.boardSize || BOARD_SIZE;
   const newUnits = [...gameState.units];
   const newCells = gameState.cells.map((row) => row.map((cell) => ({ ...cell })));
 
   // 各勢力の領地クラスターを検出
   for (const faction of gameState.factions) {
-    const clusters = findTerritoryClusters(newCells, faction.id);
+    const clusters = findTerritoryClusters(newCells, faction.id, boardSize);
 
     for (const cluster of clusters) {
       // 10%の確率で新しいコマを生成
