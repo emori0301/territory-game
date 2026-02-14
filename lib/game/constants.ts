@@ -3,7 +3,7 @@
 export const BOARD_SIZE = 30;
 export const INITIAL_UNITS_PER_FACTION = 15; // 10から15に増加（より多くのコマでバトルが起きやすく）
 export const INITIAL_UNIT_VALUE = 15; // 10から15に増加（ライフ減少を緩和）
-export const MOVE_DISTANCE = 2; // 2マス移動（より活発に）
+export const MOVE_DISTANCE = 1; // 1マス移動
 export const MAX_TICKS = 500;
 export const MAX_UNITS = 300;
 export const MAX_AGE = 150; // 100から150に増加（より長生きに）
