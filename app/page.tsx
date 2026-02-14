@@ -16,7 +16,6 @@ export default function Home() {
       setGameId(data.id);
       setIsRunning(false);
       // ゲーム状態を取得（gameIdが設定されれば自動的にクエリが実行される）
-      utils.game.getState.invalidate({ gameId: data.id });
     },
     onError: (error) => {
       console.error("Failed to create game:", error);
