@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import type { GameState } from "@/lib/game/types";
 
 interface GameBoardProps {
@@ -10,6 +10,33 @@ interface GameBoardProps {
 
 export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // 背景パターンを固定（useMemoで一度だけ生成）
+  const backgroundPattern = useMemo(() => {
+    const pattern: Array<Array<{ color: string; dots: Array<{ x: number; y: number }> }>> = [];
+    const grassColors = ["#7cb342", "#8bc34a", "#9ccc65", "#aed581"];
+    
+    for (let y = 0; y < 30; y++) {
+      pattern[y] = [];
+      for (let x = 0; x < 30; x++) {
+        // 固定パターン（x+yの値で決定）
+        const colorIndex = (x + y * 3) % grassColors.length;
+        const dots: Array<{ x: number; y: number }> = [];
+        // 固定のドット位置
+        for (let i = 0; i < 3; i++) {
+          dots.push({
+            x: ((x * 7 + y * 11 + i * 13) % cellSize),
+            y: ((x * 13 + y * 7 + i * 17) % cellSize),
+          });
+        }
+        pattern[y]!.push({
+          color: grassColors[colorIndex]!,
+          dots,
+        });
+      }
+    }
+    return pattern;
+  }, [cellSize]);
 
   useEffect(() => {
     if (!gameState || !canvasRef.current) return;
@@ -23,26 +50,21 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
       canvas.width = size;
       canvas.height = size;
 
-      // ドラゴンクエスト風の緑の草地背景
-      const grassColors = ["#7cb342", "#8bc34a", "#9ccc65", "#aed581"];
-      
-      // 背景を草地風に描画
+      // 固定された背景を描画
       for (let y = 0; y < 30; y++) {
         for (let x = 0; x < 30; x++) {
           const px = x * cellSize;
           const py = y * cellSize;
+          const pattern = backgroundPattern[y]![x]!;
           
-          // ランダムに緑の色を選ぶ（ドット絵風）
-          const grassColor = grassColors[Math.floor(Math.random() * grassColors.length)]!;
-          ctx.fillStyle = grassColor;
+          // 背景色
+          ctx.fillStyle = pattern.color;
           ctx.fillRect(px, py, cellSize, cellSize);
           
-          // 草のテクスチャ（小さな点で）
+          // 草のテクスチャ（固定位置）
           ctx.fillStyle = "#689f38";
-          for (let i = 0; i < 3; i++) {
-            const dotX = px + Math.random() * cellSize;
-            const dotY = py + Math.random() * cellSize;
-            ctx.fillRect(Math.floor(dotX), Math.floor(dotY), 1, 1);
+          for (const dot of pattern.dots) {
+            ctx.fillRect(px + dot.x, py + dot.y, 1, 1);
           }
         }
       }
@@ -56,12 +78,18 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
           const px = x * cellSize;
           const py = y * cellSize;
 
-          // 領地の色（ドット絵風の半透明）
+          // 領地の色（透過度を上げて見やすく）
           if (cell.ownerFactionId === "faction-a") {
-            ctx.fillStyle = "rgba(33, 150, 243, 0.5)"; // 青（半透明）
+            ctx.fillStyle = "rgba(33, 150, 243, 0.75)"; // 青（透過度上げる）
             ctx.fillRect(px, py, cellSize, cellSize);
           } else if (cell.ownerFactionId === "faction-b") {
-            ctx.fillStyle = "rgba(244, 67, 54, 0.5)"; // 赤（半透明）
+            ctx.fillStyle = "rgba(244, 67, 54, 0.75)"; // 赤（透過度上げる）
+            ctx.fillRect(px, py, cellSize, cellSize);
+          } else if (cell.ownerFactionId === "faction-c") {
+            ctx.fillStyle = "rgba(76, 175, 80, 0.75)"; // 緑（透過度上げる）
+            ctx.fillRect(px, py, cellSize, cellSize);
+          } else if (cell.ownerFactionId === "faction-d") {
+            ctx.fillStyle = "rgba(255, 152, 0, 0.75)"; // オレンジ（透過度上げる）
             ctx.fillRect(px, py, cellSize, cellSize);
           }
 
@@ -116,7 +144,7 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
     } catch (error) {
       console.error("Error drawing game board:", error);
     }
-  }, [gameState, cellSize]);
+  }, [gameState, cellSize, backgroundPattern]);
 
   return (
     <div className="flex justify-center">
@@ -138,9 +166,21 @@ function drawPixelArtMale(
   factionId: string,
 ) {
   const pixelSize = size / 8; // 8x8のドット絵
-  const baseColor = factionId === "faction-a" ? "#2196F3" : "#F44336";
-  const darkColor = factionId === "faction-a" ? "#1976D2" : "#D32F2F";
-  const lightColor = factionId === "faction-a" ? "#64B5F6" : "#EF5350";
+  let baseColor = "#2196F3";
+  let darkColor = "#1976D2";
+  if (factionId === "faction-a") {
+    baseColor = "#2196F3"; // 青
+    darkColor = "#1976D2";
+  } else if (factionId === "faction-b") {
+    baseColor = "#F44336"; // 赤
+    darkColor = "#D32F2F";
+  } else if (factionId === "faction-c") {
+    baseColor = "#4CAF50"; // 緑
+    darkColor = "#388E3C";
+  } else if (factionId === "faction-d") {
+    baseColor = "#FF9800"; // オレンジ
+    darkColor = "#F57C00";
+  }
 
   // ドット絵パターン（8x8）
   const pattern = [
@@ -189,8 +229,21 @@ function drawPixelArtFemale(
   factionId: string,
 ) {
   const pixelSize = size / 8;
-  const baseColor = factionId === "faction-a" ? "#2196F3" : "#F44336";
-  const darkColor = factionId === "faction-a" ? "#1976D2" : "#D32F2F";
+  let baseColor = "#2196F3";
+  let darkColor = "#1976D2";
+  if (factionId === "faction-a") {
+    baseColor = "#2196F3"; // 青
+    darkColor = "#1976D2";
+  } else if (factionId === "faction-b") {
+    baseColor = "#F44336"; // 赤
+    darkColor = "#D32F2F";
+  } else if (factionId === "faction-c") {
+    baseColor = "#4CAF50"; // 緑
+    darkColor = "#388E3C";
+  } else if (factionId === "faction-d") {
+    baseColor = "#FF9800"; // オレンジ
+    darkColor = "#F57C00";
+  }
   const accentColor = "#FF69B4"; // ピンクのアクセント
 
   // ドット絵パターン（8x8）- 雌は円形ベース
@@ -244,7 +297,16 @@ function drawPixelArtHero(
   const pixelSize = size / 8;
   const goldColor = "#FFD700";
   const darkGold = "#FFA500";
-  const baseColor = factionId === "faction-a" ? "#2196F3" : "#F44336";
+  let baseColor = "#2196F3";
+  if (factionId === "faction-a") {
+    baseColor = "#2196F3"; // 青
+  } else if (factionId === "faction-b") {
+    baseColor = "#F44336"; // 赤
+  } else if (factionId === "faction-c") {
+    baseColor = "#4CAF50"; // 緑
+  } else if (factionId === "faction-d") {
+    baseColor = "#FF9800"; // オレンジ
+  }
 
   // 英雄のドット絵パターン（8x8）- 金色で目立つ
   const pattern = [

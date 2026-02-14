@@ -166,16 +166,10 @@ export function checkWinCondition(gameState: GameState): {
     factionUnitCounts.set(unit.factionId, count + 1);
   }
 
-  // 片勢力のコマ数が0
-  for (const [factionId, count] of factionUnitCounts.entries()) {
-    if (count === 0) {
-      // もう一方の勢力が勝者
-      for (const [otherFactionId] of factionUnitCounts.entries()) {
-        if (otherFactionId !== factionId) {
-          return { status: "finished", winnerId: otherFactionId };
-        }
-      }
-    }
+  // 3勢力以上が0になった場合、残った勢力が勝者
+  const activeFactions = Array.from(factionUnitCounts.entries()).filter(([_, count]) => count > 0);
+  if (activeFactions.length === 1) {
+    return { status: "finished", winnerId: activeFactions[0]![0]! };
   }
 
   // 500tick経過
@@ -297,22 +291,28 @@ export function executeTick(gameState: GameState): GameState {
     spawnedCells,
   );
 
-  // 11. 勝利条件をチェック
-  const newTick = gameState.tick + 1;
-  const { status, winnerId } = checkWinCondition({
-    ...gameState,
-    tick: newTick,
-    units: survivedUnits,
-    cells: finalCells,
-  });
+    // 11. 勝利条件をチェック
+    const newTick = gameState.tick + 1;
+    const { status, winnerId } = checkWinCondition({
+      ...gameState,
+      tick: newTick,
+      units: survivedUnits,
+      cells: finalCells,
+    });
 
-  return {
-    ...gameState,
-    tick: newTick,
-    status,
-    winnerId,
-    units: survivedUnits,
-    cells: finalCells,
-  };
+    return {
+      ...gameState,
+      tick: newTick,
+      status,
+      winnerId,
+      units: survivedUnits,
+      cells: finalCells,
+    };
+  } catch (error) {
+    console.error("Error in executeTick:", error);
+    console.error("GameState:", JSON.stringify(gameState, null, 2));
+    // エラーが発生した場合は、ゲーム状態をそのまま返す（クラッシュを防ぐ）
+    return gameState;
+  }
 }
 

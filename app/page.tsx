@@ -160,9 +160,9 @@ export default function Home() {
 
         {gameState && (
           <div className="mb-4 text-center">
-            <div className="flex gap-6 justify-center flex-wrap">
+            <div className="flex gap-4 justify-center flex-wrap">
               <div>
-                <span className="text-blue-400">勢力A: </span>
+                <span className="text-blue-400">勢力A（青）: </span>
                 <span className="font-bold">
                   {gameState.units.filter((u) => u.factionId === "faction-a")
                     .length}
@@ -170,9 +170,25 @@ export default function Home() {
                 体
               </div>
               <div>
-                <span className="text-red-400">勢力B: </span>
+                <span className="text-red-400">勢力B（赤）: </span>
                 <span className="font-bold">
                   {gameState.units.filter((u) => u.factionId === "faction-b")
+                    .length}
+                </span>
+                体
+              </div>
+              <div>
+                <span className="text-green-400">勢力C（緑）: </span>
+                <span className="font-bold">
+                  {gameState.units.filter((u) => u.factionId === "faction-c")
+                    .length}
+                </span>
+                体
+              </div>
+              <div>
+                <span className="text-orange-400">勢力D（オレンジ）: </span>
+                <span className="font-bold">
+                  {gameState.units.filter((u) => u.factionId === "faction-d")
                     .length}
                 </span>
                 体
@@ -183,10 +199,14 @@ export default function Home() {
               {gameState.status === "finished" && (
                 <div className="text-yellow-400 font-bold">
                   {gameState.winnerId === "faction-a"
-                    ? "勢力Aの勝利！"
+                    ? "勢力A（青）の勝利！"
                     : gameState.winnerId === "faction-b"
-                      ? "勢力Bの勝利！"
-                      : "引き分け"}
+                      ? "勢力B（赤）の勝利！"
+                      : gameState.winnerId === "faction-c"
+                        ? "勢力C（緑）の勝利！"
+                        : gameState.winnerId === "faction-d"
+                          ? "勢力D（オレンジ）の勝利！"
+                          : "引き分け"}
                 </div>
               )}
             </div>
@@ -197,7 +217,7 @@ export default function Home() {
 
         {gameState && (
           <div className="mt-4 text-sm text-gray-400 text-center">
-            <p>英雄: ★マーク | 青: 勢力A | 赤: 勢力B</p>
+            <p>英雄: ★マーク | 青: 勢力A | 赤: 勢力B | 緑: 勢力C | オレンジ: 勢力D</p>
             <p>雄: 四角形 | 雌: 円形</p>
             <p>数字はコマのvalue（強さ・寿命）</p>
             <p>3×3以上の領地から定期的に新しいコマが生まれます</p>

@@ -25,24 +25,28 @@ export function createEmptyBoard(): Cell[][] {
 
 /**
  * 初期コマを配置
- * 勢力A: 左側中央エリア (0-12, 10-20) - より中央寄りに配置
- * 勢力B: 右側中央エリア (17-29, 10-20) - より中央寄りに配置
- * これにより、初期から接触しやすくなる
+ * 4勢力を四隅に配置
+ * 勢力A: 左上 (0-9, 0-9)
+ * 勢力B: 右上 (20-29, 0-9)
+ * 勢力C: 左下 (0-9, 20-29)
+ * 勢力D: 右下 (20-29, 20-29)
  */
 export function placeInitialUnits(
   cells: Cell[][],
   factionA: Faction,
   factionB: Faction,
+  factionC: Faction,
+  factionD: Faction,
 ): Unit[] {
   const units: Unit[] = [];
   let unitIdCounter = 0;
 
-  // 勢力A（左側中央）
+  // 勢力A（左上）
   for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
     let placed = false;
     while (!placed) {
-      const x = randomInt(0, 12);
-      const y = randomInt(10, 20);
+      const x = randomInt(0, 9);
+      const y = randomInt(0, 9);
       if (cells[y]![x]!.unitId === null) {
         const unit: Unit = {
           id: `unit-${unitIdCounter++}`,
@@ -61,16 +65,64 @@ export function placeInitialUnits(
     }
   }
 
-  // 勢力B（右側中央）
+  // 勢力B（右上）
   for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
     let placed = false;
     while (!placed) {
-      const x = randomInt(17, 29);
-      const y = randomInt(10, 20);
+      const x = randomInt(20, 29);
+      const y = randomInt(0, 9);
       if (cells[y]![x]!.unitId === null) {
         const unit: Unit = {
           id: `unit-${unitIdCounter++}`,
           factionId: factionB.id,
+          x,
+          y,
+          sex: getRandomSex(),
+          value: INITIAL_UNIT_VALUE,
+          isHero: false,
+          age: 0,
+        };
+        units.push(unit);
+        cells[y]![x]!.unitId = unit.id;
+        placed = true;
+      }
+    }
+  }
+
+  // 勢力C（左下）
+  for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
+    let placed = false;
+    while (!placed) {
+      const x = randomInt(0, 9);
+      const y = randomInt(20, 29);
+      if (cells[y]![x]!.unitId === null) {
+        const unit: Unit = {
+          id: `unit-${unitIdCounter++}`,
+          factionId: factionC.id,
+          x,
+          y,
+          sex: getRandomSex(),
+          value: INITIAL_UNIT_VALUE,
+          isHero: false,
+          age: 0,
+        };
+        units.push(unit);
+        cells[y]![x]!.unitId = unit.id;
+        placed = true;
+      }
+    }
+  }
+
+  // 勢力D（右下）
+  for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
+    let placed = false;
+    while (!placed) {
+      const x = randomInt(20, 29);
+      const y = randomInt(20, 29);
+      if (cells[y]![x]!.unitId === null) {
+        const unit: Unit = {
+          id: `unit-${unitIdCounter++}`,
+          factionId: factionD.id,
           x,
           y,
           sex: getRandomSex(),
@@ -92,26 +144,52 @@ export function placeInitialUnits(
  * 新しいゲーム状態を作成
  */
 export function createNewGame(): GameState {
-  const factionA: Faction = {
-    id: "faction-a",
-    name: "勢力A",
-  };
-  const factionB: Faction = {
-    id: "faction-b",
-    name: "勢力B",
-  };
+  try {
+    const factionA: Faction = {
+      id: "faction-a",
+      name: "勢力A（青）",
+    };
+    const factionB: Faction = {
+      id: "faction-b",
+      name: "勢力B（赤）",
+    };
+    const factionC: Faction = {
+      id: "faction-c",
+      name: "勢力C（緑）",
+    };
+    const factionD: Faction = {
+      id: "faction-d",
+      name: "勢力D（オレンジ）",
+    };
 
-  const cells = createEmptyBoard();
-  const units = placeInitialUnits(cells, factionA, factionB);
+    const cells = createEmptyBoard();
+    const units = placeInitialUnits(cells, factionA, factionB, factionC, factionD);
 
-  return {
-    id: `game-${Date.now()}`,
-    status: "playing",
-    tick: 0,
-    winnerId: null,
-    factions: [factionA, factionB],
-    units,
-    cells,
-  };
+    const gameState: GameState = {
+      id: `game-${Date.now()}`,
+      status: "playing",
+      tick: 0,
+      winnerId: null,
+      factions: [factionA, factionB, factionC, factionD],
+      units,
+      cells,
+    };
+
+    // バリデーション
+    if (!gameState.cells || !Array.isArray(gameState.cells)) {
+      throw new Error("Invalid cells structure");
+    }
+    if (!gameState.units || !Array.isArray(gameState.units)) {
+      throw new Error("Invalid units structure");
+    }
+    if (!gameState.factions || !Array.isArray(gameState.factions)) {
+      throw new Error("Invalid factions structure");
+    }
+
+    return gameState;
+  } catch (error) {
+    console.error("Error in createNewGame:", error);
+    throw error;
+  }
 }
 

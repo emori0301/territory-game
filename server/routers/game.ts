@@ -63,11 +63,18 @@ export const gameRouter = createTRPCRouter({
   // 新しいゲームを作成
   create: publicProcedure.mutation(() => {
     try {
+      console.log("Creating new game...");
       const gameState = createNewGame();
+      console.log("Game created:", gameState.id, "Units:", gameState.units.length);
       gameStore.set(gameState.id, gameState);
-      return serializeGameState(gameState);
+      const serialized = serializeGameState(gameState);
+      console.log("Game serialized successfully");
+      return serialized;
     } catch (error) {
       console.error("Error creating game:", error);
+      if (error instanceof Error) {
+        console.error("Error stack:", error.stack);
+      }
       throw new Error(`Failed to create game: ${error instanceof Error ? error.message : String(error)}`);
     }
   }),
