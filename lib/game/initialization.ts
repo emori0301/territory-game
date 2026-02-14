@@ -82,6 +82,7 @@ export function placeInitialUnits(
           value: INITIAL_UNIT_VALUE,
           isHero: false,
           age: 0,
+          trait: getRandomTrait(),
         };
         units.push(unit);
         cells[y]![x]!.unitId = unit.id;
@@ -106,6 +107,7 @@ export function placeInitialUnits(
           value: INITIAL_UNIT_VALUE,
           isHero: false,
           age: 0,
+          trait: getRandomTrait(),
         };
         units.push(unit);
         cells[y]![x]!.unitId = unit.id;
@@ -130,6 +132,7 @@ export function placeInitialUnits(
           value: INITIAL_UNIT_VALUE,
           isHero: false,
           age: 0,
+          trait: getRandomTrait(),
         };
         units.push(unit);
         cells[y]![x]!.unitId = unit.id;
