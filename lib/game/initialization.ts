@@ -1,7 +1,7 @@
 // ゲーム初期化ロジック
 
 import { BOARD_SIZE, INITIAL_UNITS_PER_FACTION, INITIAL_UNIT_VALUE } from "./constants";
-import { getRandomSex, isValidPosition, randomInt } from "./utils";
+import { getRandomSex, getRandomTrait, isValidPosition, randomInt } from "./utils";
 import type { Cell, Faction, GameState, Unit } from "./types";
 
 /**
@@ -57,6 +57,7 @@ export function placeInitialUnits(
           value: INITIAL_UNIT_VALUE,
           isHero: false,
           age: 0,
+          trait: getRandomTrait(),
         };
         units.push(unit);
         cells[y]![x]!.unitId = unit.id;

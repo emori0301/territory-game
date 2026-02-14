@@ -46,6 +46,7 @@ function serializeGameState(gameState: GameState): GameState {
         value: unit.value,
         isHero: unit.isHero,
         age: unit.age,
+        trait: unit.trait,
       })),
       factions: gameState.factions.map((faction) => ({
         id: faction.id,

@@ -17,3 +17,7 @@ export const DECAY_THRESHOLD = 15; // 10から15に増加
 // 移動時のvalue消費確率（50%の確率で消費しない）
 export const MOVE_VALUE_CONSUMPTION_PROBABILITY = 0.5;
 
+// 特性関連の定数
+export const ENEMY_DETECTION_RANGE = 5; // 敵を検出する範囲（マンハッタン距離）
+export const GATHERER_MIN_VALUE = 30; // 集結コマが攻撃を開始する最小value
+

@@ -1,6 +1,6 @@
 // 衝突解決ロジック
 
-import { getAdjacentEmptyCells, getRandomSex } from "./utils";
+import { getAdjacentEmptyCells, getRandomSex, getRandomTrait } from "./utils";
 import type { Cell, GameState, Unit } from "./types";
 
 /**

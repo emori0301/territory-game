@@ -96,7 +96,7 @@ function checkHeroBirth(gameState: GameState): Unit[] {
         const targetUnit = factionUnits[targetIndex]!;
         const unitIndex = units.findIndex((u) => u.id === targetUnit.id);
         if (unitIndex !== -1) {
-          units[unitIndex] = { ...targetUnit, isHero: true };
+          units[unitIndex] = { ...targetUnit, isHero: true, trait: targetUnit.trait };
         }
       }
     }

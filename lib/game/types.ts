@@ -1,6 +1,7 @@
 // ゲームの型定義
 
 export type Sex = "male" | "female";
+export type UnitTrait = "painter" | "aggressive" | "gatherer" | "normal";
 
 export interface Unit {
   id: string;
@@ -11,6 +12,7 @@ export interface Unit {
   value: number;
   isHero: boolean;
   age: number;
+  trait: UnitTrait; // コマの特性
 }
 
 export interface Cell {

@@ -1,7 +1,7 @@
 // 領地関連のロジック
 
 import { BOARD_SIZE } from "./constants";
-import { getAdjacentEmptyCells, getRandomSex, randomInt } from "./utils";
+import { getAdjacentEmptyCells, getRandomSex, getRandomTrait, randomInt } from "./utils";
 import type { Cell, GameState, Unit } from "./types";
 
 /**
@@ -117,6 +117,7 @@ export function spawnUnitsFromTerritory(
             value: randomInt(10, 15), // 10-15のランダムなvalue
             isHero: false,
             age: 0,
+            trait: getRandomTrait(),
           };
 
           newUnits.push(newUnit);

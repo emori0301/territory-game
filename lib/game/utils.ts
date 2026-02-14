@@ -24,6 +24,19 @@ export function getRandomDirection(): "up" | "down" | "left" | "right" {
 }
 
 /**
+ * ランダムな特性を取得
+ */
+export function getRandomTrait(): "painter" | "aggressive" | "gatherer" | "normal" {
+  const traits: Array<"painter" | "aggressive" | "gatherer" | "normal"> = [
+    "painter",
+    "aggressive",
+    "gatherer",
+    "normal",
+  ];
+  return traits[Math.floor(Math.random() * traits.length)]!;
+}
+
+/**
  * 方向に基づいて次の座標を計算（複数マス移動可能）
  */
 export function getNextPosition(
