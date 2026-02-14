@@ -74,15 +74,17 @@ export function placeInitialUnits(
       const x = randomInt(20, 29);
       const y = randomInt(0, 9);
       if (cells[y]![x]!.unitId === null) {
+        const sex = getRandomSex();
         const unit: Unit = {
           id: `unit-${unitIdCounter++}`,
           factionId: factionB.id,
           x,
           y,
-          sex: getRandomSex(),
+          sex,
           value: INITIAL_UNIT_VALUE,
           isHero: false,
-          trait: getRandomTrait(),
+          trait: getRandomTrait(sex),
+          inCombat: false,
         };
         units.push(unit);
         cells[y]![x]!.unitId = unit.id;
@@ -98,15 +100,17 @@ export function placeInitialUnits(
       const x = randomInt(0, 9);
       const y = randomInt(20, 29);
       if (cells[y]![x]!.unitId === null) {
+        const sex = getRandomSex();
         const unit: Unit = {
           id: `unit-${unitIdCounter++}`,
           factionId: factionC.id,
           x,
           y,
-          sex: getRandomSex(),
+          sex,
           value: INITIAL_UNIT_VALUE,
           isHero: false,
-          trait: getRandomTrait(),
+          trait: getRandomTrait(sex),
+          inCombat: false,
         };
         units.push(unit);
         cells[y]![x]!.unitId = unit.id;
@@ -122,15 +126,17 @@ export function placeInitialUnits(
       const x = randomInt(20, 29);
       const y = randomInt(20, 29);
       if (cells[y]![x]!.unitId === null) {
+        const sex = getRandomSex();
         const unit: Unit = {
           id: `unit-${unitIdCounter++}`,
           factionId: factionD.id,
           x,
           y,
-          sex: getRandomSex(),
+          sex,
           value: INITIAL_UNIT_VALUE,
           isHero: false,
-          trait: getRandomTrait(),
+          trait: getRandomTrait(sex),
+          inCombat: false,
         };
         units.push(unit);
         cells[y]![x]!.unitId = unit.id;
