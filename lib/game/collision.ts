@@ -179,7 +179,14 @@ export function resolveCollisions(
 
     // 敵勢力衝突を優先
     if (unitA.factionId !== unitB.factionId) {
-      units = handleEnemyCollision(unitA, unitB, { ...gameState, units });
+      const result = handleEnemyCollision(unitA, unitB, { ...gameState, units, cells });
+      units = result.units;
+      // cellsを更新
+      for (let y = 0; y < cells.length; y++) {
+        for (let x = 0; x < cells[y]!.length; x++) {
+          cells[y]![x] = result.cells[y]![x]!;
+        }
+      }
       processedUnits.add(idA);
       processedUnits.add(idB);
       continue;
