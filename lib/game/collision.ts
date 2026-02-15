@@ -122,7 +122,12 @@ function handleEnemyCollision(
   const damageA = Math.max(1, Math.floor(unitB.value * 0.1));
   const damageB = Math.max(1, Math.floor(unitA.value * 0.1));
   
-  const newCells = gameState.cells.map((row) => row.map((cell) => ({ ...cell })));
+  const newCells = gameState.cells.map((row) => row.map((cell) => ({ 
+    ...cell,
+    baseId: cell.baseId ?? null,
+    baseFactionId: cell.baseFactionId ?? null,
+    baseCreatedTick: cell.baseCreatedTick ?? null,
+  })));
   const combatPosition = { x: unitA.x, y: unitA.y };
 
   const newUnits = gameState.units.map((u) => {

@@ -33,15 +33,15 @@ function getRandomTerrain(
     return false;
   })();
   
-  // 周囲に水がある場合は水の出現確率を上げる
-  if (hasNearbyWater && rand < 0.3) {
+  // 周囲に水がある場合は水の出現確率を上げる（減らす）
+  if (hasNearbyWater && rand < 0.15) {
     return "water";
   }
   
-  if (rand < 0.85) return "plain"; // 85% 平地
-  if (rand < 0.90) return "water"; // 5% 水（単独でも出現）
-  if (rand < 0.94) return "rock"; // 4% 岩
-  if (rand < 0.97) return "tree"; // 3% 木
+  if (rand < 0.90) return "plain"; // 90% 平地
+  if (rand < 0.92) return "water"; // 2% 水（単独でも出現、大幅に減らす）
+  if (rand < 0.95) return "rock"; // 3% 岩
+  if (rand < 0.97) return "tree"; // 2% 木
   if (rand < 0.99) return "swamp"; // 2% 沼地
   return "mountain"; // 1% 山
 }
@@ -62,6 +62,9 @@ export function createEmptyBoard(boardSize: number = BOARD_SIZE): Cell[][] {
         ownerFactionId: null,
         unitId: null,
         terrain: "plain",
+        baseId: null,
+        baseFactionId: null,
+        baseCreatedTick: null,
       };
     }
   }
@@ -86,116 +89,56 @@ export function createEmptyBoard(boardSize: number = BOARD_SIZE): Cell[][] {
  */
 export function placeInitialUnits(
   cells: Cell[][],
-  factionA: Faction,
-  factionB: Faction,
-  factionC: Faction,
-  factionD: Faction,
+  factionA: Faction | null,
+  factionB: Faction | null,
+  factionC: Faction | null,
+  factionD: Faction | null,
   boardSize: number = BOARD_SIZE,
+  factionCount: number = 4,
 ): Unit[] {
   const units: Unit[] = [];
   let unitIdCounter = 0;
-
-  // 勢力A（左上）
   const cornerSize = Math.floor(boardSize / 3);
-  for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
-    let placed = false;
-    while (!placed) {
-      const x = randomInt(0, cornerSize - 1);
-      const y = randomInt(0, cornerSize - 1);
-      if (cells[y]![x]!.unitId === null) {
-        const sex = getRandomSex();
-        const unit: Unit = {
-          id: `unit-${unitIdCounter++}`,
-          factionId: factionA.id,
-          x,
-          y,
-          sex,
-          value: INITIAL_UNIT_VALUE,
-          isHero: false,
-          trait: getRandomTrait(sex),
-          inCombat: false,
-        };
-        units.push(unit);
-        cells[y]![x]!.unitId = unit.id;
-        placed = true;
-      }
-    }
-  }
 
-  // 勢力B（右上）
-  for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
-    let placed = false;
-    while (!placed) {
-      const x = randomInt(boardSize - cornerSize, boardSize - 1);
-      const y = randomInt(0, cornerSize - 1);
-      if (cells[y]![x]!.unitId === null) {
-        const sex = getRandomSex();
-        const unit: Unit = {
-          id: `unit-${unitIdCounter++}`,
-          factionId: factionB.id,
-          x,
-          y,
-          sex,
-          value: INITIAL_UNIT_VALUE,
-          isHero: false,
-          trait: getRandomTrait(sex),
-          inCombat: false,
-        };
-        units.push(unit);
-        cells[y]![x]!.unitId = unit.id;
-        placed = true;
-      }
-    }
-  }
+  // 各勢力の配置位置を定義
+  const factionPositions = [
+    { faction: factionA, xRange: [0, cornerSize - 1], yRange: [0, cornerSize - 1] }, // 左上
+    { faction: factionB, xRange: [boardSize - cornerSize, boardSize - 1], yRange: [0, cornerSize - 1] }, // 右上
+    { faction: factionC, xRange: [0, cornerSize - 1], yRange: [boardSize - cornerSize, boardSize - 1] }, // 左下
+    { faction: factionD, xRange: [boardSize - cornerSize, boardSize - 1], yRange: [boardSize - cornerSize, boardSize - 1] }, // 右下
+  ];
 
-  // 勢力C（左下）
-  for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
-    let placed = false;
-    while (!placed) {
-      const x = randomInt(0, cornerSize - 1);
-      const y = randomInt(boardSize - cornerSize, boardSize - 1);
-      if (cells[y]![x]!.unitId === null) {
-        const sex = getRandomSex();
-        const unit: Unit = {
-          id: `unit-${unitIdCounter++}`,
-          factionId: factionC.id,
-          x,
-          y,
-          sex,
-          value: INITIAL_UNIT_VALUE,
-          isHero: false,
-          trait: getRandomTrait(sex),
-          inCombat: false,
-        };
-        units.push(unit);
-        cells[y]![x]!.unitId = unit.id;
-        placed = true;
-      }
-    }
-  }
+  // 指定された数の勢力のみ配置
+  for (let f = 0; f < factionCount; f++) {
+    const factionPos = factionPositions[f];
+    if (!factionPos || !factionPos.faction) continue;
 
-  // 勢力D（右下）
-  for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
-    let placed = false;
-    while (!placed) {
-      const x = randomInt(boardSize - cornerSize, boardSize - 1);
-      const y = randomInt(boardSize - cornerSize, boardSize - 1);
-      if (cells[y]![x]!.unitId === null) {
-        const sex = getRandomSex();
-        const unit: Unit = {
-          id: `unit-${unitIdCounter++}`,
-          factionId: factionD.id,
-          x,
-          y,
-          sex,
-          value: INITIAL_UNIT_VALUE,
-          isHero: false,
-          trait: getRandomTrait(sex),
-          inCombat: false,
-        };
-        units.push(unit);
-        cells[y]![x]!.unitId = unit.id;
-        placed = true;
+    for (let i = 0; i < INITIAL_UNITS_PER_FACTION; i++) {
+      let placed = false;
+      let attempts = 0;
+      while (!placed && attempts < 100) {
+        attempts++;
+        const x = randomInt(factionPos.xRange[0]!, factionPos.xRange[1]!);
+        const y = randomInt(factionPos.yRange[0]!, factionPos.yRange[1]!);
+        const cell = cells[y]?.[x];
+        // 水地形や岩地形の上には配置しない（平地、木、沼地、山のみ）
+        if (cell && cell.unitId === null && cell.terrain !== "water" && cell.terrain !== "rock") {
+          const sex = getRandomSex();
+          const unit: Unit = {
+            id: `unit-${unitIdCounter++}`,
+            factionId: factionPos.faction!.id,
+            x,
+            y,
+            sex,
+            value: INITIAL_UNIT_VALUE,
+            isHero: false,
+            trait: "builder", // 初期コマは拠点作成を優先
+            inCombat: false,
+          };
+          units.push(unit);
+          cells[y]![x]!.unitId = unit.id;
+          placed = true;
+        }
       }
     }
   }
@@ -204,39 +147,68 @@ export function placeInitialUnits(
 }
 
 /**
+ * ランダムな勢力名を取得
+ */
+function getRandomFactionName(): string {
+  const names = [
+    "アヴァロン王国", "ドラゴン帝国", "フェアリー共和国", "エルフ連邦",
+    "ドワーフ同盟", "オーク部族", "人間王国", "魔法帝国",
+    "聖騎士団", "暗黒軍団", "竜騎士団", "精霊の森",
+    "鋼鉄の都", "氷の王国", "炎の帝国", "雷の共和国",
+    "風の連邦", "大地の王国", "光の帝国", "闇の共和国",
+  ];
+  return names[Math.floor(Math.random() * names.length)]!;
+}
+
+/**
  * 新しいゲーム状態を作成
  */
-export function createNewGame(boardSize: number = BOARD_SIZE): GameState {
+export function createNewGame(boardSize: number = BOARD_SIZE, factionCount: number = 4): GameState {
   try {
-    const factionA: Faction = {
-      id: "faction-a",
-      name: "勢力A（青）",
-    };
-    const factionB: Faction = {
-      id: "faction-b",
-      name: "勢力B（赤）",
-    };
-    const factionC: Faction = {
-      id: "faction-c",
-      name: "勢力C（緑）",
-    };
-    const factionD: Faction = {
-      id: "faction-d",
-      name: "勢力D（オレンジ）",
-    };
+    // 指定された数の異なる勢力名をランダムに選ぶ
+    const selectedNames = new Set<string>();
+    while (selectedNames.size < factionCount) {
+      selectedNames.add(getRandomFactionName());
+    }
+    const namesArray = Array.from(selectedNames);
+    
+    const factions: Faction[] = [];
+    const factionColors = [
+      { id: "faction-a", name: "（青）", color: "青" },
+      { id: "faction-b", name: "（赤）", color: "赤" },
+      { id: "faction-c", name: "（緑）", color: "緑" },
+      { id: "faction-d", name: "（オレンジ）", color: "オレンジ" },
+    ];
+    
+    for (let i = 0; i < factionCount; i++) {
+      factions.push({
+        id: factionColors[i]!.id,
+        name: `${namesArray[i]}${factionColors[i]!.name}`,
+      });
+    }
 
     const cells = createEmptyBoard(boardSize);
-    const units = placeInitialUnits(cells, factionA, factionB, factionC, factionD, boardSize);
+    const units = placeInitialUnits(
+      cells,
+      factions[0] || null,
+      factions[1] || null,
+      factions[2] || null,
+      factions[3] || null,
+      boardSize,
+      factionCount
+    );
 
     const gameState: GameState = {
       id: `game-${Date.now()}`,
       status: "playing",
       tick: 0,
       winnerId: null,
-      factions: [factionA, factionB, factionC, factionD],
+      factions,
       units,
       cells,
       boardSize,
+      playerFactionId: null, // ゲーム開始時は未設定
+      userCommands: [], // ユーザー命令は空
     };
 
     // バリデーション

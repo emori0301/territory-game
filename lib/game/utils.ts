@@ -4,6 +4,27 @@ import { BOARD_SIZE } from "./constants";
 import type { Cell, Unit, TerrainType, UnitTrait } from "./types";
 
 /**
+ * 2点間の移動方向を計算
+ */
+export function calculateDirection(
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+): "up" | "down" | "left" | "right" | null {
+  const dx = toX - fromX;
+  const dy = toY - fromY;
+  
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx > 0 ? "right" : "left";
+  } else if (dy !== 0) {
+    return dy > 0 ? "down" : "up";
+  }
+  
+  return null;
+}
+
+/**
  * 座標が盤面内かどうかをチェック
  */
 export function isValidPosition(x: number, y: number, boardSize: number = BOARD_SIZE): boolean {
@@ -25,19 +46,41 @@ export function getRandomDirection(): "up" | "down" | "left" | "right" {
 
 /**
  * ランダムな特性を取得（性別を考慮）
+ * 職人の割合を増やすため、craftsmanの確率を上げる
  */
 export function getRandomTrait(sex?: "male" | "female"): UnitTrait {
-  let traits: UnitTrait[];
+  const rand = Math.random();
   
   if (sex === "female") {
-    // 雌は攻撃的な特性（aggressive, berserker, kamikaze）を除外
-    traits = ["painter", "wanderer", "scout", "normal"];
+    // 雌は攻撃的な特性（warrior, berserker）を除外
+    // 職人を25%、侵略者を30%（確率上げ）、その他を45%に設定
+    if (rand < 0.25) {
+      return "craftsman";
+    } else if (rand < 0.55) {
+      return "invader"; // 侵略者（確率上げ）
+    }
+    const traits: UnitTrait[] = ["wanderer", "scout", "normal"];
+    return traits[Math.floor(Math.random() * traits.length)]!;
   } else {
     // 雄は全ての特性から選択
-    traits = ["painter", "aggressive", "berserker", "wanderer", "kamikaze", "scout", "normal"];
+    // 職人を20%、侵略者を30%（確率上げ）、戦士を20%、その他を30%に設定
+    if (rand < 0.2) {
+      return "craftsman";
+    } else if (rand < 0.5) {
+      return "invader"; // 侵略者（確率上げ）
+    } else if (rand < 0.7) {
+      // 攻撃的な特性
+      const aggressiveTraits: UnitTrait[] = ["warrior", "berserker"];
+      return aggressiveTraits[Math.floor(Math.random() * aggressiveTraits.length)]!;
+    } else {
+      // 放浪者の確率を下げる（10%）、その他を20%
+      if (rand < 0.8) {
+        return "wanderer";
+      }
+      const otherTraits: UnitTrait[] = ["scout", "normal"];
+      return otherTraits[Math.floor(Math.random() * otherTraits.length)]!;
+    }
   }
-  
-  return traits[Math.floor(Math.random() * traits.length)]!;
 }
 
 /**
@@ -144,6 +187,30 @@ export function getSurroundingCells(
 }
 
 /**
+ * 周囲8マス（上下左右+斜め）の座標を取得
+ */
+export function getSurrounding8Cells(
+  x: number,
+  y: number,
+  boardSize: number = BOARD_SIZE,
+): Array<{ x: number; y: number }> {
+  const cells: Array<{ x: number; y: number }> = [];
+  
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue; // 自分自身は除外
+      const nx = x + dx;
+      const ny = y + dy;
+      if (isValidPosition(nx, ny, boardSize)) {
+        cells.push({ x: nx, y: ny });
+      }
+    }
+  }
+  
+  return cells;
+}
+
+/**
  * ランダムな性別を取得
  */
 export function getRandomSex(): "male" | "female" {
@@ -155,5 +222,46 @@ export function getRandomSex(): "male" | "female" {
  */
 export function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * 地形を通れるかチェック
+ */
+export function canPassTerrain(terrain: TerrainType, isHero: boolean): boolean {
+  switch (terrain) {
+    case "plain":
+    case "rock":
+    case "tree":
+    case "swamp":
+      return true;
+    case "water":
+      return isHero; // 英雄のみ水を通れる
+    case "mountain":
+      return false; // 山は通れない
+    default:
+      return true;
+  }
+}
+
+/**
+ * 地形によるvalue消費コストを取得
+ */
+export function getTerrainValueCost(terrain: TerrainType): number {
+  switch (terrain) {
+    case "plain":
+      return 0;
+    case "water":
+      return 2; // 水はコストが高い
+    case "rock":
+      return 1;
+    case "tree":
+      return 1; // 木を切るコスト
+    case "swamp":
+      return 2; // 沼地はコストが高い
+    case "mountain":
+      return 999; // 山は通れないので高いコスト
+    default:
+      return 0;
+  }
 }
 

@@ -1,0 +1,13 @@
+<svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+  <!-- 家の屋根 -->
+  <path d="M16,4 L4,14 L4,28 L28,28 L28,14 Z" fill="#8B4513" stroke="#654321" stroke-width="1"/>
+  <!-- 家の壁 -->
+  <rect x="6" y="16" width="20" height="12" fill="#DEB887" stroke="#8B4513" stroke-width="1"/>
+  <!-- ドア -->
+  <rect x="12" y="20" width="6" height="8" fill="#654321"/>
+  <!-- 窓 -->
+  <rect x="8" y="18" width="4" height="4" fill="#87CEEB" stroke="#654321" stroke-width="1"/>
+  <rect x="20" y="18" width="4" height="4" fill="#87CEEB" stroke="#654321" stroke-width="1"/>
+  <!-- 煙突 -->
+  <rect x="22" y="8" width="3" height="6" fill="#696969"/>
+</svg>

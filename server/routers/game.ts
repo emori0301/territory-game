@@ -36,6 +36,9 @@ function serializeGameState(gameState: GameState): GameState {
           ownerFactionId: cell.ownerFactionId,
           unitId: cell.unitId,
           terrain: cell.terrain || "plain",
+          baseId: cell.baseId ?? null,
+          baseFactionId: cell.baseFactionId ?? null,
+          baseCreatedTick: cell.baseCreatedTick ?? null,
         })),
       ),
       units: gameState.units.map((unit) => ({
@@ -54,6 +57,8 @@ function serializeGameState(gameState: GameState): GameState {
         name: faction.name,
       })),
       boardSize: gameState.boardSize || 30,
+      playerFactionId: gameState.playerFactionId ?? null,
+      userCommands: gameState.userCommands || [],
     };
   } catch (error) {
     console.error("Error serializing game state:", error);
@@ -67,12 +72,14 @@ export const gameRouter = createTRPCRouter({
   create: publicProcedure
     .input(z.object({ 
       boardSize: z.number().min(10).max(50).optional().default(30),
+      factionCount: z.number().min(2).max(4).optional().default(4),
     }).optional())
     .mutation(({ input }) => {
       try {
         const boardSize = input?.boardSize || 30;
-        console.log("Creating new game with board size:", boardSize);
-        const gameState = createNewGame(boardSize);
+        const factionCount = input?.factionCount || 4;
+        console.log("Creating new game with board size:", boardSize, "faction count:", factionCount);
+        const gameState = createNewGame(boardSize, factionCount);
         console.log("Game created:", gameState.id, "Units:", gameState.units.length);
         gameStore.set(gameState.id, gameState);
         const serialized = serializeGameState(gameState);
@@ -151,5 +158,55 @@ export const gameRouter = createTRPCRouter({
       unitCount: game.units.length,
     }));
   }),
+
+  // プレイヤー勢力を設定
+  setPlayerFaction: publicProcedure
+    .input(z.object({ 
+      gameId: z.string(),
+      factionId: z.string(),
+    }))
+    .mutation(({ input }) => {
+      const gameState = gameStore.get(input.gameId);
+      if (!gameState) {
+        throw new Error("Game not found");
+      }
+      gameState.playerFactionId = input.factionId;
+      gameStore.set(input.gameId, gameState);
+      return serializeGameState(gameState);
+    }),
+
+  // ユーザー命令を追加
+  addUserCommand: publicProcedure
+    .input(z.object({ 
+      gameId: z.string(),
+      unitId: z.string(),
+      type: z.enum(["move", "attack", "createBase"]),
+      targetX: z.number().optional(),
+      targetY: z.number().optional(),
+      targetUnitId: z.string().optional(),
+    }))
+    .mutation(({ input }) => {
+      const gameState = gameStore.get(input.gameId);
+      if (!gameState) {
+        throw new Error("Game not found");
+      }
+      
+      // 既存の命令を削除（同じコマへの命令は上書き）
+      gameState.userCommands = (gameState.userCommands || []).filter(
+        cmd => cmd.unitId !== input.unitId
+      );
+      
+      // 新しい命令を追加
+      gameState.userCommands.push({
+        unitId: input.unitId,
+        type: input.type,
+        targetX: input.targetX,
+        targetY: input.targetY,
+        targetUnitId: input.targetUnitId,
+      });
+      
+      gameStore.set(input.gameId, gameState);
+      return serializeGameState(gameState);
+    }),
 });
 

@@ -1,7 +1,7 @@
 // ゲームの型定義
 
 export type Sex = "male" | "female";
-export type UnitTrait = "painter" | "aggressive" | "berserker" | "wanderer" | "kamikaze" | "scout" | "normal";
+export type UnitTrait = "craftsman" | "warrior" | "berserker" | "wanderer" | "scout" | "invader" | "builder" | "normal";
 export type TerrainType = "plain" | "water" | "rock" | "tree" | "swamp" | "mountain";
 
 export interface Unit {
@@ -22,6 +22,9 @@ export interface Cell {
   ownerFactionId: string | null;
   unitId: string | null;
   terrain: TerrainType; // 地形タイプ
+  baseId: string | null; // 拠点ID（拠点がある場合）
+  baseFactionId: string | null; // 拠点の勢力ID
+  baseCreatedTick: number | null; // 拠点が作成されたtick
 }
 
 export interface Faction {
@@ -38,6 +41,16 @@ export interface GameState {
   units: Unit[];
   cells: Cell[][]; // 動的なサイズの2次元配列
   boardSize: number; // ボードサイズを追加
+  playerFactionId: string | null; // プレイヤーが操作する勢力ID
+  userCommands: UserCommand[]; // ユーザーからの命令
+}
+
+export interface UserCommand {
+  unitId: string;
+  type: "move" | "attack" | "createBase";
+  targetX?: number;
+  targetY?: number;
+  targetUnitId?: string;
 }
 
 export interface MoveIntent {

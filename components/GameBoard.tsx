@@ -1,17 +1,31 @@
 "use client";
 
 import { useEffect, useRef, useMemo, useState } from "react";
-import type { GameState, UnitTrait, TerrainType } from "@/lib/game/types";
+import type { GameState, UnitTrait, TerrainType, Cell, Unit } from "@/lib/game/types";
 
 interface GameBoardProps {
   gameState: GameState | null;
   cellSize?: number;
+  playerFactionId?: string | null;
+  selectedUnitIds?: Set<string>;
+  onUnitClick?: (unitId: string, x: number, y: number) => void;
+  onCellClick?: (x: number, y: number) => void;
+  onHoverCell?: (cell: { cell: Cell; unit: Unit | null; x: number; y: number } | null) => void;
 }
 
-export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
+export function GameBoard({ 
+  gameState, 
+  cellSize = 15,
+  playerFactionId = null,
+  onUnitClick,
+  onCellClick,
+  selectedUnitIds = new Set(),
+  onHoverCell,
+}: GameBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const [hoveredUnit, setHoveredUnit] = useState<{ unit: any; x: number; y: number } | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<{ cell: Cell; unit: Unit | null; x: number; y: number } | null>(null);
+  const lastHoveredRef = useRef<{ x: number; y: number } | null>(null);
   
   // クライアント側でのみマウントされるようにする
   useEffect(() => {
@@ -28,17 +42,20 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
     mountain: null,
   });
   
+  // 拠点（家）の画像を読み込み
+  const houseImage = useRef<HTMLImageElement | null>(null);
+  
   useEffect(() => {
     if (typeof window === "undefined") return;
     
-    // フリー素材の画像URL（実際の画像に置き換える必要があります）
+    // 地形画像のURL（SVGファイルを使用）
     const imageUrls: Record<TerrainType, string> = {
-      plain: "/images/terrain/grass.png",
-      water: "/images/terrain/water.png",
-      rock: "/images/terrain/rock.png",
-      tree: "/images/terrain/tree.png",
-      swamp: "/images/terrain/swamp.png",
-      mountain: "/images/terrain/mountain.png",
+      plain: "/images/terrain/grass.svg",
+      water: "/images/terrain/water.svg",
+      rock: "/images/terrain/rock.svg",
+      tree: "/images/terrain/tree.svg",
+      swamp: "/images/terrain/swamp.svg",
+      mountain: "/images/terrain/mountain.svg",
     };
     
     // 画像を読み込み
@@ -51,6 +68,16 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
       img.src = imageUrls[terrain as TerrainType];
       terrainImages.current[terrain as TerrainType] = img;
     });
+    
+    // 家の画像を読み込み
+    const houseImg = new Image();
+    houseImg.onload = () => {
+      houseImage.current = houseImg;
+    };
+    houseImg.onerror = () => {
+      houseImage.current = null;
+    };
+    houseImg.src = "/images/terrain/house.svg";
   }, []);
   
   // 地形画像を取得する関数
@@ -68,9 +95,9 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   ) => {
     switch (terrain) {
       case "water":
-        ctx.fillStyle = "rgba(33, 150, 243, 0.7)"; // 青（水、半透明）
+        ctx.fillStyle = "rgba(0, 188, 212, 0.8)"; // シアン（水、青勢力と区別しやすく）
         ctx.fillRect(x, y, size, size);
-        ctx.fillStyle = "#1976D2";
+        ctx.fillStyle = "#00838F";
         ctx.font = `${Math.floor(size * 0.4)}px monospace`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -123,20 +150,22 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   // 特性の日本語名と説明を取得
   const getTraitInfo = (trait: UnitTrait): { name: string; description: string } => {
     switch (trait) {
-      case "painter":
-        return { name: "塗り職人", description: "塗られていないマスを優先" };
-      case "aggressive":
-        return { name: "攻撃的", description: "周囲5マス以内の敵に向かう" };
+      case "craftsman":
+        return { name: "職人", description: "塗られていないマス+相手陣地を塗る" };
+      case "warrior":
+        return { name: "戦士", description: "周囲10マス以内の敵に向かう" };
       case "berserker":
         return { name: "狂戦士", description: "valueが低いほど遠くの敵も攻撃（カオス）" };
       case "wanderer":
-        return { name: "放浪者", description: "完全にランダムに動く（カオス）" };
-      case "kamikaze":
-        return { name: "特攻", description: "valueが低いと突進、高いと逃走（カオス）" };
+        return { name: "放浪者", description: "ランダムに動く（カオス）" };
       case "scout":
-        return { name: "斥候", description: "遠くの敵を探して移動（カオス）" };
+        return { name: "斥候", description: "塗られていない土地優先、なければ侵略者と同様" };
+      case "invader":
+        return { name: "侵略者", description: "相手陣地の塗りを優先" };
+      case "builder":
+        return { name: "建築家", description: "拠点作成を優先" };
       case "normal":
-        return { name: "通常", description: "バランス型の行動" };
+        return { name: "通常", description: "味方がいなければ塗り、いれば合体" };
       default:
         return { name: trait, description: "" };
     }
@@ -145,7 +174,8 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
   // マウス移動イベントハンドラー
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!gameState || !canvasRef.current || !isMounted) {
-      setHoveredUnit(null);
+      setHoveredCell(null);
+      lastHoveredRef.current = null;
       return;
     }
     
@@ -154,22 +184,84 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
     const x = Math.floor((e.clientX - rect.left) / cellSize);
     const y = Math.floor((e.clientY - rect.top) / cellSize);
     
-    // マウス位置のコマを検索
+    // 前回と同じセルの場合は更新しない（チラつき防止）
+    if (lastHoveredRef.current && lastHoveredRef.current.x === x && lastHoveredRef.current.y === y) {
+      return;
+    }
+    
+    lastHoveredRef.current = { x, y };
+    
+    // マウス位置のセルとコマを取得
+    const cell = gameState.cells[y]?.[x];
     const unit = gameState.units.find((u) => u.x === x && u.y === y);
     
-    if (unit) {
-      setHoveredUnit({
-        unit,
-        x: e.clientX,
-        y: e.clientY,
-      });
+    if (cell) {
+      const hoverData = {
+        cell,
+        unit: unit || null,
+        x,
+        y,
+      };
+      setHoveredCell(hoverData);
+      if (onHoverCell) onHoverCell(hoverData);
     } else {
-      setHoveredUnit(null);
+      setHoveredCell(null);
+      if (onHoverCell) onHoverCell(null);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredCell(null);
+    lastHoveredRef.current = null;
+    if (onHoverCell) onHoverCell(null);
+  };
+
+  // クリックイベントハンドラー
+  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!gameState || !canvasRef.current || !isMounted) return;
+    
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / cellSize);
+    const y = Math.floor((e.clientY - rect.top) / cellSize);
+    
+    // クリック位置のコマを取得
+    const unit = gameState.units.find((u) => u.x === x && u.y === y);
+    
+    if (unit && onUnitClick) {
+      // コマがクリックされた場合
+      onUnitClick(unit.id, x, y);
+    } else if (onCellClick) {
+      // セルがクリックされた場合
+      onCellClick(x, y);
     }
   };
   
-  const handleMouseLeave = () => {
-    setHoveredUnit(null);
+  // 地形名を日本語で取得
+  const getTerrainName = (terrain: TerrainType): string => {
+    switch (terrain) {
+      case "plain":
+        return "平地";
+      case "water":
+        return "水";
+      case "rock":
+        return "岩";
+      case "tree":
+        return "木";
+      case "swamp":
+        return "沼地";
+      case "mountain":
+        return "山";
+      default:
+        return terrain;
+    }
+  };
+  
+  // 勢力名を取得
+  const getFactionName = (factionId: string | null): string => {
+    if (!factionId) return "なし";
+    const faction = gameState?.factions.find((f) => f.id === factionId);
+    return faction?.name || factionId;
   };
   
   // 背景パターンを固定（useMemoで一度だけ生成、Hydrationエラーを防ぐ）
@@ -273,6 +365,7 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
             ctx.fillRect(px, py, cellSize, cellSize);
           }
 
+
           // グリッド線（薄く）
           ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
           ctx.lineWidth = 0.5;
@@ -280,7 +373,114 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
         }
       }
 
-      // コマをドット絵風に描画
+      // 拠点（家）をコマの前に描画（コマより下に描画して、拠点が見えるようにする）
+      // まず拠点の数をカウント（デバッグ用）
+      let baseCount = 0;
+      for (let y = 0; y < boardSize; y++) {
+        for (let x = 0; x < boardSize; x++) {
+          const cell = gameState.cells[y]?.[x];
+          if (cell && cell.baseId && cell.baseFactionId) {
+            baseCount++;
+          }
+        }
+      }
+      if (baseCount > 0) {
+        console.log(`[描画] 拠点数: ${baseCount}`);
+      }
+      
+      for (let y = 0; y < boardSize; y++) {
+        for (let x = 0; x < boardSize; x++) {
+          const cell = gameState.cells[y]?.[x];
+          if (!cell || !cell.baseId || !cell.baseFactionId) continue;
+          
+          // デバッグログ（最初の拠点のみ）
+          if (baseCount > 0 && x === 0 && y === 0) {
+            console.log(`[描画] 拠点を描画: pos=(${x},${y}), baseId=${cell.baseId}, faction=${cell.baseFactionId}`);
+          }
+
+          const px = x * cellSize;
+          const py = y * cellSize;
+          
+          // そのマスにコマがいるかチェック
+          const unitAtBase = gameState.units.find(u => u.x === x && u.y === y);
+          
+          // 家の画像を使用して描画（常に大きく、目立つように）
+          if (houseImage.current && houseImage.current.complete && houseImage.current.naturalWidth > 0) {
+            // 画像が読み込まれている場合は画像を使用（常に大きく表示）
+            const houseSize = cellSize * 0.9; // 常に大きく表示
+            const houseX = px + (cellSize - houseSize) / 2;
+            const houseY = py + (cellSize - houseSize) / 2;
+            
+            // 勢力色でフィルターを適用（画像の色を変更）
+            ctx.save();
+            ctx.globalCompositeOperation = "source-over";
+            
+            // 勢力色に合わせて色調を変更
+            if (cell.baseFactionId === "faction-a") {
+              ctx.filter = "hue-rotate(200deg) saturate(1.5)";
+            } else if (cell.baseFactionId === "faction-b") {
+              ctx.filter = "hue-rotate(0deg) saturate(1.5)";
+            } else if (cell.baseFactionId === "faction-c") {
+              ctx.filter = "hue-rotate(100deg) saturate(1.5)";
+            } else if (cell.baseFactionId === "faction-d") {
+              ctx.filter = "hue-rotate(30deg) saturate(1.5)";
+            }
+            
+            ctx.drawImage(houseImage.current, houseX, houseY, houseSize, houseSize);
+            ctx.restore();
+          } else {
+            // 画像が読み込まれていない場合はフォールバック描画（常に大きく表示）
+            const iconSize = cellSize * 0.9; // 常に大きく表示
+            const iconX = px + (cellSize - iconSize) / 2;
+            const iconY = py + (cellSize - iconSize) / 2;
+            
+            // 屋根（勢力色に合わせる）
+            let roofColor = "#8B4513";
+            if (cell.baseFactionId === "faction-a") {
+              roofColor = "#1565C0";
+            } else if (cell.baseFactionId === "faction-b") {
+              roofColor = "#C62828";
+            } else if (cell.baseFactionId === "faction-c") {
+              roofColor = "#2E7D32";
+            } else if (cell.baseFactionId === "faction-d") {
+              roofColor = "#E65100";
+            }
+            
+            ctx.fillStyle = roofColor;
+            ctx.beginPath();
+            ctx.moveTo(iconX + iconSize / 2, iconY + iconSize * 0.1);
+            ctx.lineTo(iconX + iconSize * 0.15, iconY + iconSize * 0.35);
+            ctx.lineTo(iconX + iconSize * 0.85, iconY + iconSize * 0.35);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // 壁
+            ctx.fillStyle = "#DEB887";
+            ctx.fillRect(iconX + iconSize * 0.2, iconY + iconSize * 0.35, iconSize * 0.6, iconSize * 0.55);
+            ctx.strokeStyle = "#8B4513";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(iconX + iconSize * 0.2, iconY + iconSize * 0.35, iconSize * 0.6, iconSize * 0.55);
+            
+            // ドア
+            ctx.fillStyle = "#654321";
+            ctx.fillRect(iconX + iconSize * 0.4, iconY + iconSize * 0.6, iconSize * 0.2, iconSize * 0.3);
+            
+            // 窓
+            ctx.fillStyle = "#87CEEB";
+            ctx.fillRect(iconX + iconSize * 0.28, iconY + iconSize * 0.42, iconSize * 0.08, iconSize * 0.08);
+            ctx.fillRect(iconX + iconSize * 0.64, iconY + iconSize * 0.42, iconSize * 0.08, iconSize * 0.08);
+            ctx.strokeStyle = "#654321";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(iconX + iconSize * 0.28, iconY + iconSize * 0.42, iconSize * 0.08, iconSize * 0.08);
+            ctx.strokeRect(iconX + iconSize * 0.64, iconY + iconSize * 0.42, iconSize * 0.08, iconSize * 0.08);
+          }
+        }
+      }
+
+      // コマをドット絵風に描画（拠点の後に描画）
       for (const unit of gameState.units) {
         const px = unit.x * cellSize;
         const py = unit.y * cellSize;
@@ -292,22 +492,31 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
         // ドット絵風のコマを描画
         ctx.imageSmoothingEnabled = false; // ドット絵風にする
 
+        // 選択されたコマは青い枠を描画
+        if (selectedUnitIds.has(unit.id)) {
+          ctx.strokeStyle = "#00ffff";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(px + 1, py + 1, cellSize - 2, cellSize - 2);
+        }
+
         // 戦闘中のコマは赤い枠を描画
         if (unit.inCombat) {
           ctx.strokeStyle = "#ff0000";
           ctx.lineWidth = 3;
           ctx.strokeRect(px + 1, py + 1, cellSize - 2, cellSize - 2);
         }
+        
+        // プレイヤー勢力のコマの黄色い枠は削除（勢力図の枠で点滅表示するため）
 
         if (unit.isHero) {
           // 英雄：金色のドット絵キャラ
           drawPixelArtHero(ctx, centerX, centerY, unitSize, unit.factionId);
         } else if (unit.sex === "male") {
-          // 雄：四角形ベースのドット絵キャラ
-          drawPixelArtMale(ctx, centerX, centerY, unitSize, unit.factionId);
+          // 雄：四角形ベースのドット絵キャラ（戦力で見た目を変える）
+          drawPixelArtMale(ctx, centerX, centerY, unitSize, unit.factionId, unit.value);
         } else {
-          // 雌：円形ベースのドット絵キャラ
-          drawPixelArtFemale(ctx, centerX, centerY, unitSize, unit.factionId);
+          // 雌：円形ベースのドット絵キャラ（戦力で見た目を変える）
+          drawPixelArtFemale(ctx, centerX, centerY, unitSize, unit.factionId, unit.value);
         }
 
         // valueを表示（ドット絵風のフォント、戦闘中は赤色）
@@ -331,7 +540,7 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
     } catch (error) {
       console.error("Error drawing game board:", error);
     }
-  }, [gameState, cellSize, backgroundPattern, isMounted]);
+  }, [gameState, cellSize, backgroundPattern, isMounted, playerFactionId, selectedUnitIds]);
 
   // サーバー側では何もレンダリングしない（Hydrationエラーを防ぐ）
   if (!isMounted) {
@@ -342,52 +551,36 @@ export function GameBoard({ gameState, cellSize = 15 }: GameBoardProps) {
     <div className="flex justify-center relative">
       <canvas
         ref={canvasRef}
-        className="border-4 border-green-500 shadow-2xl cursor-pointer"
+        className="border-4 border-white shadow-2xl cursor-pointer"
         style={{ 
           imageRendering: "pixelated",
           imageRendering: "-moz-crisp-edges",
           imageRendering: "crisp-edges",
-          boxShadow: "0 0 20px rgba(0, 255, 0, 0.5)"
+          boxShadow: "0 0 20px rgba(255, 255, 255, 0.5)"
         }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
       />
-      {hoveredUnit && isMounted && (
-        <div
-          className="absolute bg-black border-2 border-green-500 text-green-400 p-2 pointer-events-none z-10"
-          style={{
-            right: "220px", // 右下のオレンジ（勢力D）の下に表示
-            bottom: "20px",
-            fontFamily: "Courier New, monospace",
-            fontSize: "12px",
-            boxShadow: "0 0 10px rgba(0, 255, 0, 0.5)",
-            maxWidth: "200px",
-          }}
-        >
-          <div className="font-bold text-green-500">
-            特性: {getTraitInfo(hoveredUnit.unit.trait).name}
-          </div>
-          <div className="text-xs text-green-300 mb-1">
-            {getTraitInfo(hoveredUnit.unit.trait).description}
-          </div>
-          <div>性別: {hoveredUnit.unit.sex === "male" ? "雄" : "雌"}</div>
-          <div>Value: {hoveredUnit.unit.value}</div>
-          {hoveredUnit.unit.inCombat && <div className="text-red-400">⚔️ 戦闘中</div>}
-          {hoveredUnit.unit.isHero && <div className="text-yellow-400">★ 英雄</div>}
-        </div>
-      )}
     </div>
   );
 }
 
-// ドット絵風の雄キャラクターを描画
+// ドット絵風の雄キャラクターを描画（四角形ベース、より角ばった、戦力で見た目を変える）
 function drawPixelArtMale(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   size: number,
   factionId: string,
+  value: number,
 ) {
+  // 戦力に応じて見た目を変える（1-20, 21-50, 51-100, 100+）
+  let tier = 0;
+  if (value >= 100) tier = 3;
+  else if (value >= 51) tier = 2;
+  else if (value >= 21) tier = 1;
+  else tier = 0;
   const pixelSize = size / 8; // 8x8のドット絵
   let baseColor = "#2196F3";
   let darkColor = "#1976D2";
@@ -405,17 +598,60 @@ function drawPixelArtMale(
     darkColor = "#F57C00";
   }
 
-  // ドット絵パターン（8x8）
-  const pattern = [
-    [0, 0, 1, 1, 1, 1, 0, 0], // 頭
-    [0, 1, 1, 1, 1, 1, 1, 0],
-    [1, 1, 2, 1, 1, 2, 1, 1], // 目
-    [1, 1, 1, 1, 1, 1, 1, 1],
-    [0, 1, 3, 3, 3, 3, 1, 0], // 体
-    [1, 3, 3, 3, 3, 3, 3, 1],
-    [1, 3, 0, 3, 3, 0, 3, 1], // 足
-    [0, 1, 0, 0, 0, 0, 1, 0],
+  // 戦力に応じたドット絵パターン（8x8）- 雄は四角形ベース、角ばった
+  // tier 0: 1-20（小さくシンプル）
+  // tier 1: 21-50（中サイズ、少し装飾）
+  // tier 2: 51-100（大きめ、装飾あり）
+  // tier 3: 100+（最大、豪華な装飾）
+  const patterns = [
+    // tier 0: 1-20
+    [
+      [0, 0, 0, 1, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 0, 0],
+      [0, 1, 2, 1, 1, 2, 1, 0],
+      [0, 1, 1, 1, 1, 1, 1, 0],
+      [0, 0, 3, 3, 3, 3, 0, 0],
+      [0, 3, 3, 3, 3, 3, 3, 0],
+      [0, 3, 0, 3, 3, 0, 3, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+    ],
+    // tier 1: 21-50
+    [
+      [0, 0, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 1, 0],
+      [1, 1, 2, 1, 1, 2, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [0, 1, 3, 3, 3, 3, 1, 0],
+      [1, 3, 3, 3, 3, 3, 3, 1],
+      [1, 3, 0, 3, 3, 0, 3, 1],
+      [0, 1, 0, 0, 0, 0, 1, 0],
+    ],
+    // tier 2: 51-100
+    [
+      [0, 0, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 4, 4, 1, 1, 0],
+      [1, 1, 2, 1, 1, 2, 1, 1],
+      [1, 1, 4, 1, 1, 4, 1, 1],
+      [0, 1, 3, 3, 3, 3, 1, 0],
+      [1, 3, 3, 4, 4, 3, 3, 1],
+      [1, 3, 0, 3, 3, 0, 3, 1],
+      [0, 1, 0, 1, 1, 0, 1, 0],
+    ],
+    // tier 3: 100+
+    [
+      [0, 1, 1, 1, 1, 1, 1, 0],
+      [1, 1, 4, 1, 1, 4, 1, 1],
+      [1, 2, 1, 4, 4, 1, 2, 1],
+      [1, 1, 4, 1, 1, 4, 1, 1],
+      [1, 3, 3, 3, 3, 3, 3, 1],
+      [3, 3, 4, 3, 3, 4, 3, 3],
+      [3, 0, 3, 4, 4, 3, 0, 3],
+      [1, 0, 1, 1, 1, 1, 0, 1],
+    ],
   ];
+  
+  const pattern = patterns[tier]!;
+  const accentColor = tier >= 2 ? "#FFD700" : baseColor; // tier 2以上は金色のアクセント
 
   for (let py = 0; py < 8; py++) {
     for (let px = 0; px < 8; px++) {
@@ -429,6 +665,8 @@ function drawPixelArtMale(
         ctx.fillStyle = "#000"; // 目
       } else if (color === 3) {
         ctx.fillStyle = darkColor;
+      } else if (color === 4) {
+        ctx.fillStyle = accentColor; // 装飾（tier 2以上）
       } else {
         continue;
       }
@@ -441,16 +679,30 @@ function drawPixelArtMale(
       );
     }
   }
+  
+  // 雄のマーク（♂）を小さく表示
+  ctx.fillStyle = "#000";
+  ctx.font = `${Math.floor(size * 0.3)}px monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("♂", x, y - size / 2 + 1);
 }
 
-// ドット絵風の雌キャラクターを描画
+// ドット絵風の雌キャラクターを描画（円形ベース、ピンクのアクセント、より丸い、戦力で見た目を変える）
 function drawPixelArtFemale(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   size: number,
   factionId: string,
+  value: number,
 ) {
+  // 戦力に応じて見た目を変える（1-20, 21-50, 51-100, 100+）
+  let tier = 0;
+  if (value >= 100) tier = 3;
+  else if (value >= 51) tier = 2;
+  else if (value >= 21) tier = 1;
+  else tier = 0;
   const pixelSize = size / 8;
   let baseColor = "#2196F3";
   let darkColor = "#1976D2";
@@ -467,19 +719,56 @@ function drawPixelArtFemale(
     baseColor = "#FF9800"; // オレンジ
     darkColor = "#F57C00";
   }
-  const accentColor = "#FF69B4"; // ピンクのアクセント
-
-  // ドット絵パターン（8x8）- 雌は円形ベース
-  const pattern = [
-    [0, 0, 1, 1, 1, 1, 0, 0], // 頭（丸い）
-    [0, 1, 1, 1, 1, 1, 1, 0],
-    [1, 1, 2, 1, 1, 2, 1, 1], // 目
-    [1, 1, 1, 4, 4, 1, 1, 1], // 口（ピンク）
-    [0, 1, 3, 3, 3, 3, 1, 0], // 体
-    [1, 3, 3, 3, 3, 3, 3, 1],
-    [1, 3, 0, 3, 3, 0, 3, 1], // 足
-    [0, 1, 0, 0, 0, 0, 1, 0],
+  // 戦力に応じたドット絵パターン（8x8）- 雌は円形ベース、ピンクのアクセント
+  const patterns = [
+    // tier 0: 1-20
+    [
+      [0, 0, 0, 1, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 0, 0],
+      [0, 1, 2, 1, 1, 2, 1, 0],
+      [0, 1, 1, 4, 4, 1, 1, 0],
+      [0, 0, 3, 3, 3, 3, 0, 0],
+      [0, 3, 3, 3, 3, 3, 3, 0],
+      [0, 3, 0, 3, 3, 0, 3, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+    ],
+    // tier 1: 21-50
+    [
+      [0, 0, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 1, 0],
+      [1, 1, 2, 1, 1, 2, 1, 1],
+      [1, 1, 1, 4, 4, 1, 1, 1],
+      [0, 1, 3, 3, 3, 3, 1, 0],
+      [1, 3, 3, 3, 3, 3, 3, 1],
+      [1, 3, 0, 3, 3, 0, 3, 1],
+      [0, 1, 0, 0, 0, 0, 1, 0],
+    ],
+    // tier 2: 51-100
+    [
+      [0, 0, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 4, 4, 1, 1, 0],
+      [1, 1, 2, 1, 1, 2, 1, 1],
+      [1, 1, 4, 1, 1, 4, 1, 1],
+      [0, 1, 3, 3, 3, 3, 1, 0],
+      [1, 3, 3, 4, 4, 3, 3, 1],
+      [1, 3, 0, 3, 3, 0, 3, 1],
+      [0, 1, 0, 1, 1, 0, 1, 0],
+    ],
+    // tier 3: 100+
+    [
+      [0, 1, 1, 1, 1, 1, 1, 0],
+      [1, 1, 4, 1, 1, 4, 1, 1],
+      [1, 2, 1, 4, 4, 1, 2, 1],
+      [1, 1, 4, 1, 1, 4, 1, 1],
+      [1, 3, 3, 3, 3, 3, 3, 1],
+      [3, 3, 4, 3, 3, 4, 3, 3],
+      [3, 0, 3, 4, 4, 3, 0, 3],
+      [1, 0, 1, 1, 1, 1, 0, 1],
+    ],
   ];
+  
+  const pattern = patterns[tier]!;
+  const accentColor = tier >= 2 ? "#FFD700" : "#FF69B4"; // tier 2以上は金色、それ以下はピンク
 
   for (let py = 0; py < 8; py++) {
     for (let px = 0; px < 8; px++) {
@@ -507,6 +796,13 @@ function drawPixelArtFemale(
       );
     }
   }
+  
+  // 雌のマーク（♀）を小さく表示
+  ctx.fillStyle = "#FF69B4";
+  ctx.font = `${Math.floor(size * 0.3)}px monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("♀", x, y - size / 2 + 1);
 }
 
 // ドット絵風の英雄キャラクターを描画
