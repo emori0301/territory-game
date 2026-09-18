@@ -623,61 +623,61 @@ export default function Home() {
       {/* 画面上部: ボタンのみ（アイコン化、高さを低く） */}
       <div className="flex gap-2 justify-center items-center mb-4 w-full flex-wrap">
         <div className="flex gap-2 items-center">
-          {!isRunning ? (
-            <>
-              <button
-                onClick={handleStart}
+        {!isRunning ? (
+          <>
+            <button
+              onClick={handleStart}
                 className="retro-button-icon"
                 title="開始"
                 type="button"
-              >
+            >
                 <Play size={18} strokeWidth={2.5} />
-              </button>
-              <button
-                onClick={handleStep}
-                disabled={executeTick.isPending || gameState?.status === "finished"}
+            </button>
+            <button
+              onClick={handleStep}
+              disabled={executeTick.isPending || gameState?.status === "finished"}
                 className="retro-button-icon"
                 title="1ステップ実行"
                 type="button"
-              >
+            >
                 {executeTick.isPending ? (
                   <span className="animate-spin">⏳</span>
                 ) : (
                   <StepForward size={18} strokeWidth={2.5} />
                 )}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handleStop}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={handleStop}
               className="retro-button-icon"
               title="停止"
               type="button"
-            >
+          >
               <Pause size={18} strokeWidth={2.5} />
-            </button>
-          )}
-          <button
-            onClick={handleReset}
-            disabled={resetGame.isPending}
+          </button>
+        )}
+        <button
+          onClick={handleReset}
+          disabled={resetGame.isPending}
             className="retro-button-icon"
             title="リセット"
             type="button"
-          >
+        >
             {resetGame.isPending ? (
               <span className="animate-spin">⏳</span>
             ) : (
               <RotateCcw size={18} strokeWidth={2.5} />
             )}
-          </button>
-          <button
-            onClick={handleBackToTitle}
+        </button>
+        <button
+          onClick={handleBackToTitle}
             className="retro-button-icon"
             title="タイトルに戻る"
             type="button"
-          >
+        >
             <HomeIcon size={18} strokeWidth={2.5} />
-          </button>
+        </button>
         </div>
         {gameState && (
           <div className="text-green-400 retro-panel flex items-center px-4 h-8 whitespace-nowrap ml-2">
@@ -686,7 +686,7 @@ export default function Home() {
               <span className="ml-4 text-green-500 font-bold">
                 {gameState.winnerId 
                   ? `${gameState.factions.find(f => f.id === gameState.winnerId)?.name || gameState.winnerId}の勝利！`
-                  : "引き分け"}
+                        : "引き分け"}
               </span>
             )}
           </div>
@@ -706,7 +706,7 @@ export default function Home() {
             return (
               <div key={faction.id} className={`retro-panel min-w-[200px] ${playerFactionId === faction.id ? "animate-pulse" : ""}`}>
                 <div className={`${colorClass} font-bold mb-2`}>{faction.name}</div>
-                <div className="text-green-400 text-sm space-y-1">
+              <div className="text-green-400 text-sm space-y-1">
                   <div>コマ数: <span className="font-bold">{stats.units}</span>体</div>
                   <div>領地: <span className="font-bold">{stats.territory}</span>マス</div>
                   <div>占有度: <span className="font-bold">{stats.occupationRate}</span>%</div>
@@ -827,7 +827,7 @@ export default function Home() {
             return (
               <div key={faction.id} className={`retro-panel min-w-[200px] ${playerFactionId === faction.id ? "animate-pulse" : ""}`}>
                 <div className={`${colorClass} font-bold mb-2`}>{faction.name}</div>
-                <div className="text-green-400 text-sm space-y-1">
+              <div className="text-green-400 text-sm space-y-1">
                   <div>コマ数: <span className="font-bold">{stats.units}</span>体</div>
                   <div>領地: <span className="font-bold">{stats.territory}</span>マス</div>
                   <div>占有度: <span className="font-bold">{stats.occupationRate}</span>%</div>

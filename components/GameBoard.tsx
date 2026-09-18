@@ -553,8 +553,6 @@ export function GameBoard({
         ref={canvasRef}
         className="border-4 border-white shadow-2xl cursor-pointer"
         style={{ 
-          imageRendering: "pixelated",
-          imageRendering: "-moz-crisp-edges",
           imageRendering: "crisp-edges",
           boxShadow: "0 0 20px rgba(255, 255, 255, 0.5)"
         }}

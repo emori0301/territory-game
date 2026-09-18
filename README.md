@@ -110,6 +110,14 @@ territory-game/
 - **勢力数**: 2-4勢力（設定画面で変更可能）
 - **音楽音量**: 0-100%（設定画面で調整可能）
 
+## ドキュメント
+
+- [PERSONAS.md](./PERSONAS.md) - ユーザーペルソナ定義
+- [TRAITS.md](./TRAITS.md) - ユニット特性の詳細
+- [UNIT_SPAWN_CONDITIONS.md](./UNIT_SPAWN_CONDITIONS.md) - ユニット生成条件
+- [USER_INTERACTION_IDEAS.md](./USER_INTERACTION_IDEAS.md) - ユーザーインタラクション案
+- [ADDITIONAL_FEATURES.md](./ADDITIONAL_FEATURES.md) - 追加機能案
+
 ## ライセンス
 
 MIT
